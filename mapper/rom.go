@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ROM wraps byte array of iNES format binary.
 type ROM struct {
 	header header
 	raw    []byte

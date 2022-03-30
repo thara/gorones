@@ -1,4 +1,4 @@
-module gorones
+module github.com/thara/gorones
 
 go 1.18
 

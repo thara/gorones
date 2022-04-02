@@ -16,6 +16,8 @@ type CPU struct {
 	t Ticker
 	m Bus
 
+	interrupt *interrupt
+
 	cycles uint64
 }
 
@@ -63,6 +65,8 @@ func (c *CPU) PowerOn() {
 
 // Step emulates 1 CPU step.
 func (c *CPU) Step() {
+	c.handleInterrupt()
+
 	op := c.fetch()
 	inst := decode(op)
 	c.execute(inst)

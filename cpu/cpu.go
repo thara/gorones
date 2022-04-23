@@ -135,3 +135,10 @@ func pageCrossed[T ~uint16 | ~int16](a, b T) bool {
 	var p int = 0xFF00
 	return (a+b)&T(p) != (b & T(p))
 }
+
+func (c *CPU) InitNESTest() {
+	c.pc = 0xC000
+	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state#cite_ref-1
+	c.p.set(0x24)
+	c.cycles = 7
+}

@@ -340,8 +340,7 @@ func (c *CPU) execute(inst instruction) {
 	case NOP:
 		c.tick()
 	case RTI:
-		v := c.pullStack() & ^c.p.u8()
-		v |= 0b10000 // for nestest
+		v := c.pullStack()
 		c.p.set(v)
 		c.pc = c.pullStackWord()
 		c.tick_n(2)

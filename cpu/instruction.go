@@ -7,8 +7,8 @@ import (
 // https://www.nesdev.org/wiki/6502_instructions
 
 type instruction struct {
-	mnemonic       mnemonic
-	addressingMode addressingMode
+	Mnemonic       mnemonic
+	AddressingMode addressingMode
 }
 
 type mnemonic uint8
@@ -95,9 +95,9 @@ const (
 )
 
 func (c *CPU) execute(inst instruction) {
-	v := c.getOperand(inst.addressingMode)
+	v := c.getOperand(inst.AddressingMode)
 
-	switch inst.mnemonic {
+	switch inst.Mnemonic {
 	case LDA:
 		c.a = c.read(v)
 		c.p.setZN(c.a)
@@ -221,7 +221,7 @@ func (c *CPU) execute(inst instruction) {
 			c.p.setZN(*m)
 			c.tick()
 		}
-		if inst.addressingMode == accumulator {
+		if inst.AddressingMode == accumulator {
 			asl(&c.a)
 			return
 		}
@@ -236,7 +236,7 @@ func (c *CPU) execute(inst instruction) {
 			c.p.setZN(*m)
 			c.tick()
 		}
-		if inst.addressingMode == accumulator {
+		if inst.AddressingMode == accumulator {
 			lsr(&c.a)
 			return
 		}
@@ -254,7 +254,7 @@ func (c *CPU) execute(inst instruction) {
 			c.p.setZN(*m)
 			c.tick()
 		}
-		if inst.addressingMode == accumulator {
+		if inst.AddressingMode == accumulator {
 			rol(&c.a)
 			return
 		}
@@ -272,7 +272,7 @@ func (c *CPU) execute(inst instruction) {
 			c.p.setZN(*m)
 			c.tick()
 		}
-		if inst.addressingMode == accumulator {
+		if inst.AddressingMode == accumulator {
 			ror(&c.a)
 			return
 		}
@@ -405,7 +405,7 @@ func (c *CPU) execute(inst instruction) {
 		c.write(v, m)
 		c.adc(v)
 	default:
-		panic(fmt.Sprintf("unrecognized mnemonic: %d", inst.mnemonic))
+		panic(fmt.Sprintf("unrecognized mnemonic: %d", inst.Mnemonic))
 	}
 }
 

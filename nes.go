@@ -11,7 +11,7 @@ type NES struct {
 	cpu cpu.CPU
 }
 
-func newNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
+func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
 	t := cpuTicker{}
 	ctx := cpuBus{mapper: m, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
@@ -88,7 +88,7 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 		b.ctrl1.Write(value)
 	case addr == 0x4017:
 		b.ctrl2.Write(value)
-		//TODO apu write
+		// TODO apu write
 	case 0x4020 <= addr && addr <= 0xFFFF:
 		b.mapper.Write(addr, value)
 	}

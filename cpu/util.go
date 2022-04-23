@@ -7,6 +7,6 @@ func bit(b bool) uint8 {
 	return 0
 }
 
-func nthBit(b, n uint8) uint8 {
-	return (b >> n) & 1
-}
+// func nthBit(b, n uint8) uint8 {
+// 	return (b >> n) & 1
+// }

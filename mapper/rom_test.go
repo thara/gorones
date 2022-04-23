@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testROMData []byte
-
 func TestParseROM(t *testing.T) {
 	f, err := os.Open("../testdata/nestest.nes")
 	require.NoError(t, err)

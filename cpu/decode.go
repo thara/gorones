@@ -4,17 +4,15 @@ func Decode(opcode uint8) instruction {
 	return instructions[opcode]
 }
 
-var (
-	instructions [256]instruction = func() [256]instruction {
-		var s []instruction
-		for i := 0; i < 256; i++ {
-			s = append(s, newInstruction(uint8(i)))
-		}
-		var a [256]instruction
-		copy(a[:], s[:256])
-		return a
-	}()
-)
+var instructions [256]instruction = func() [256]instruction {
+	var s []instruction
+	for i := 0; i < 256; i++ {
+		s = append(s, newInstruction(uint8(i)))
+	}
+	var a [256]instruction
+	copy(a[:], s[:256])
+	return a
+}()
 
 func newInstruction(op uint8) instruction {
 	switch op {

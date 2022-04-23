@@ -30,8 +30,10 @@ type header struct {
 	mirroring  Mirroring
 }
 
-var magicNumber = []byte{0x4E, 0x45, 0x53, 0x1A}
-var padding = []byte{0, 0, 0, 0, 0}
+var (
+	magicNumber = []byte{0x4E, 0x45, 0x53, 0x1A}
+	padding     = []byte{0, 0, 0, 0, 0}
+)
 
 // ParseROM load NES binary program in iNES file format
 func ParseROM(r io.Reader) (*ROM, error) {

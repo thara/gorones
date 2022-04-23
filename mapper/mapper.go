@@ -1,6 +1,8 @@
 package mapper
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 // https://www.nesdev.org/wiki/Mapper
 
@@ -49,9 +51,9 @@ func newMapper0(rom *ROM) Mapper {
 
 func (m *mapper0) Read(addr uint16) uint8 {
 	switch {
-	case 0x0000 <= addr || addr <= 0x1FFF:
+	case 0x0000 <= addr && addr <= 0x1FFF:
 		return m.chr[addr]
-	case 0x8000 <= addr || addr <= 0xFFFF:
+	case 0x8000 <= addr && addr <= 0xFFFF:
 		if m.mirrored {
 			addr %= 0x4000
 		} else {
@@ -64,7 +66,7 @@ func (m *mapper0) Read(addr uint16) uint8 {
 
 func (m *mapper0) Write(addr uint16, value uint8) {
 	switch {
-	case 0x0000 <= addr || addr <= 0x1FFF:
+	case 0x0000 <= addr && addr <= 0x1FFF:
 		m.chr[addr] = value
 	}
 }

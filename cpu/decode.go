@@ -1,6 +1,6 @@
 package cpu
 
-func decode(opcode uint8) instruction {
+func Decode(opcode uint8) instruction {
 	return instructions[opcode]
 }
 

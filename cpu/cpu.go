@@ -68,7 +68,7 @@ func (c *CPU) Step() {
 	c.handleInterrupt()
 
 	op := c.fetch()
-	inst := decode(op)
+	inst := Decode(op)
 	c.execute(inst)
 }
 

@@ -31,12 +31,11 @@ func Test_nestest(t *testing.T) {
 	var ticker cpuTicker
 	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker}
 	nes := &NES{
-		cpu: cpu.New(&ticker, &bus),
+		cpu: cpu.NewEmu(&ticker, &bus),
 	}
 	nes.powerOn()
 
 	nes.cpu.InitNESTest()
-	ticker.cycles = nes.cpu.Trace().Cycles
 
 	f, err = os.Open("testdata/nestest.log")
 	require.NoError(t, err)
@@ -49,8 +48,6 @@ func Test_nestest(t *testing.T) {
 		line := sc.Text()
 
 		tr := nes.cpu.Trace()
-		tr.Cycles = ticker.cycles
-
 		nes.step()
 
 		li, err := parseCPUTrace(line)
@@ -62,7 +59,7 @@ func Test_nestest(t *testing.T) {
 	}
 	require.NoError(t, sc.Err())
 
-	assert.EqualValues(t, 26560, ticker.cycles)
+	assert.EqualValues(t, 26560, nes.cpu.Trace().Cycles)
 
 	assert.EqualValues(t, 0, bus.ReadCPU(0x0002))
 	assert.EqualValues(t, 0, bus.ReadCPU(0x0003))
@@ -100,7 +97,7 @@ func parseCPUTrace(line string) (*cpu.Trace, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.Pc = uint16(n)
+	t.PC = uint16(n)
 
 	err = toInt("op", 16, &n)
 	if err != nil {
@@ -138,7 +135,7 @@ func parseCPUTrace(line string) (*cpu.Trace, error) {
 	if err != nil {
 		return nil, err
 	}
-	t.P = uint8(n)
+	t.P = cpu.NewStatus(uint8(n))
 	err = toInt("s", 16, &n)
 	if err != nil {
 		return nil, err

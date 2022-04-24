@@ -2,44 +2,37 @@ package cpu
 
 // Trace is a snapshot of CPU state
 type Trace struct {
-	Pc            uint16
-	Opcode        uint8
-	Operand1      uint8
-	Operand2      uint8
-	A, X, Y, S, P uint8
+	CPU
+
+	Opcode   uint8
+	Operand1 uint8
+	Operand2 uint8
 
 	Mnemonic       mnemonic
 	AddressingMode addressingMode
-	Cycles         uint64
 }
 
 // Trace current CPU state and return snapshot
-func (c *CPU) Trace() Trace {
-	op := c.m.ReadCPU(c.pc)
+func (e *Emu) Trace() Trace {
+	op := e.m.ReadCPU(e.cpu.PC)
 	inst := Decode(op)
 
 	len := inst.AddressingMode.instructionLength()
 	var op1, op2 uint8
 	switch len {
 	case 3:
-		op2 = c.m.ReadCPU(c.pc + 2)
+		op2 = e.m.ReadCPU(e.cpu.PC + 2)
 		fallthrough
 	case 2:
-		op1 = c.m.ReadCPU(c.pc + 1)
+		op1 = e.m.ReadCPU(e.cpu.PC + 1)
 	}
 	return Trace{
-		Pc:             c.pc,
+		CPU:            e.cpu,
 		Opcode:         op,
 		Operand1:       op1,
 		Operand2:       op2,
-		A:              c.a,
-		X:              c.x,
-		Y:              c.y,
-		S:              c.s,
-		P:              c.p.u8() | 0x20, // for nestest
 		Mnemonic:       inst.Mnemonic,
 		AddressingMode: inst.AddressingMode,
-		Cycles:         c.cycles,
 	}
 }
 

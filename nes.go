@@ -6,16 +6,16 @@ import (
 	"github.com/thara/gorones/mapper"
 )
 
-// NES component's state
+// NES components
 type NES struct {
-	cpu cpu.CPU
+	cpu *cpu.Emu
 }
 
 func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
 	t := cpuTicker{}
 	ctx := cpuBus{mapper: m, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
-		cpu: cpu.New(&t, &ctx),
+		cpu: cpu.NewEmu(&t, &ctx),
 	}
 }
 

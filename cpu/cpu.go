@@ -18,10 +18,6 @@ type cpu struct {
 	Cycles uint64
 }
 
-func (c *cpu) reset() {
-	*c = cpu{}
-}
-
 // https://www.nesdev.org/wiki/Status_flags
 
 // Status represents CPU Status by flags

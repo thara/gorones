@@ -118,7 +118,7 @@ func (s *getOperandTestSuite) Test_absoluteX() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x0423
 			s.emu.cpu.X = tt.x
 
@@ -146,7 +146,7 @@ func (s *getOperandTestSuite) Test_absoluteY() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x0423
 			s.emu.cpu.Y = tt.y
 
@@ -207,7 +207,7 @@ func (s *getOperandTestSuite) Test_indirectIndexed() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x020F
 			s.emu.cpu.Y = tt.y
 
@@ -383,7 +383,7 @@ func (s *executeTestSuite) Test_ADC() {
 	}
 	for i, tt := range tests {
 		s.Run(fmt.Sprintf("pattern:%d", i), func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x020F
 			s.emu.cpu.A = tt.a
 
@@ -466,7 +466,7 @@ func (s *executeTestSuite) Test_ROL() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x020F
 			s.emu.cpu.A = 0b10001010
 			s.emu.cpu.P.Set(tt.p)
@@ -526,7 +526,7 @@ func (s *executeTestSuite) Test_BCC() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.emu.cpu.reset()
+			s.emu.cpu = cpu{}
 			s.emu.cpu.PC = 0x0031
 			s.emu.cpu.P.Set(tt.p)
 

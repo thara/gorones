@@ -29,7 +29,7 @@ type Status [6]bool
 
 func NewStatus(b uint8) Status {
 	var s Status
-	s.set(b)
+	s.Set(b)
 	return s
 }
 
@@ -42,7 +42,7 @@ func (s *Status) u8() uint8 {
 		bit(s[status_N])<<7
 }
 
-func (s *Status) set(b uint8) {
+func (s *Status) Set(b uint8) {
 	s[status_C] = b&1 == 1
 	s[status_Z] = (b>>1)&1 == 1
 	s[status_I] = (b>>2)&1 == 1
@@ -52,7 +52,7 @@ func (s *Status) set(b uint8) {
 }
 
 func (s *Status) insert(b uint8) {
-	s.set(s.u8() | b)
+	s.Set(s.u8() | b)
 }
 
 func (s *Status) setZN(v uint8) {

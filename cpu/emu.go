@@ -41,7 +41,7 @@ func (e *Emu) PowerOn() {
 	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state
 
 	// IRQ disabled
-	e.cpu.P.set(0x34)
+	e.cpu.P.Set(0x34)
 	e.cpu.A = 0x00
 	e.cpu.X = 0x00
 	e.cpu.Y = 0x00
@@ -145,11 +145,4 @@ func (e *Emu) handleInterrupt() {
 	e.cpu.P[status_I] = true
 	e.cpu.PC = e.readWord(intr.vector())
 	e.interrupt = nil
-}
-
-func (e *Emu) InitNESTest() {
-	e.cpu.PC = 0xC000
-	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state#cite_ref-1
-	e.cpu.P.set(0x24)
-	e.cpu.Cycles = 7
 }

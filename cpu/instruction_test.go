@@ -469,7 +469,7 @@ func (s *executeTestSuite) Test_ROL() {
 			s.emu.cpu.reset()
 			s.emu.cpu.PC = 0x020F
 			s.emu.cpu.A = 0b10001010
-			s.emu.cpu.P.set(tt.p)
+			s.emu.cpu.P.Set(tt.p)
 
 			s.emu.Step()
 
@@ -528,7 +528,7 @@ func (s *executeTestSuite) Test_BCC() {
 		s.Run(tt.name, func() {
 			s.emu.cpu.reset()
 			s.emu.cpu.PC = 0x0031
-			s.emu.cpu.P.set(tt.p)
+			s.emu.cpu.P.Set(tt.p)
 
 			s.bus[0x0031] = 0x90
 			s.bus[0x0032] = tt.operand
@@ -543,7 +543,7 @@ func (s *executeTestSuite) Test_BCC() {
 
 func (s *executeTestSuite) Test_CLD() {
 	s.emu.cpu.PC = 0x020F
-	s.emu.cpu.P.set(0b011001001)
+	s.emu.cpu.P.Set(0b011001001)
 
 	s.bus[0x020F] = 0xD8
 
@@ -556,7 +556,7 @@ func (s *executeTestSuite) Test_CLD() {
 
 func (s *executeTestSuite) Test_SEI() {
 	s.emu.cpu.PC = 0x020F
-	s.emu.cpu.P.set(0b011001001)
+	s.emu.cpu.P.Set(0b011001001)
 
 	s.bus[0x020F] = 0x78
 
@@ -569,7 +569,7 @@ func (s *executeTestSuite) Test_SEI() {
 
 func (s *executeTestSuite) Test_BRK() {
 	s.emu.cpu.PC = 0x020F
-	s.emu.cpu.P.set(0b01100001)
+	s.emu.cpu.P.Set(0b01100001)
 	s.emu.cpu.S = 0xBF
 
 	s.bus[0x020F] = 0x00
@@ -586,7 +586,7 @@ func (s *executeTestSuite) Test_BRK() {
 
 func (s *executeTestSuite) Test_RTI() {
 	s.emu.cpu.PC = 0x020F
-	s.emu.cpu.P.set(0b01100101)
+	s.emu.cpu.P.Set(0b01100101)
 	s.emu.cpu.S = 0xBC
 
 	s.bus[0x020F] = 0x40

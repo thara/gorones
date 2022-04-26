@@ -617,7 +617,7 @@ func (e *Emu) execute(inst instruction) {
 	case PLP:
 		v := e.pullStack() & ^instructionB
 		v |= 0b100000 // for nestest
-		e.cpu.P.set(v)
+		e.cpu.P.Set(v)
 		e.tick_n(2)
 
 	case AND:
@@ -807,7 +807,7 @@ func (e *Emu) execute(inst instruction) {
 		e.tick()
 	case RTI:
 		v := e.pullStack()
-		e.cpu.P.set(v)
+		e.cpu.P.Set(v)
 		e.cpu.PC = e.pullStackWord()
 		e.tick_n(2)
 

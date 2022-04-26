@@ -2,7 +2,7 @@ package cpu
 
 // Trace is a snapshot of CPU state
 type Trace struct {
-	CPU
+	cpu
 
 	Opcode   uint8
 	Operand1 uint8
@@ -27,7 +27,7 @@ func (e *Emu) Trace() Trace {
 		op1 = e.m.ReadCPU(e.cpu.PC + 1)
 	}
 	return Trace{
-		CPU:            e.cpu,
+		cpu:            e.cpu,
 		Opcode:         op,
 		Operand1:       op1,
 		Operand2:       op2,

@@ -2,8 +2,8 @@ package cpu
 
 import "fmt"
 
-/// CPU has CPU registers and interrupt status
-type CPU struct {
+/// cpu has cpu registers and clock cycle
+type cpu struct {
 	// https://wiki.nesdev.org/w/index.php?title=CPU_registers
 
 	// Accumulator, Index X/Y register
@@ -18,8 +18,8 @@ type CPU struct {
 	Cycles uint64
 }
 
-func (c *CPU) reset() {
-	*c = CPU{}
+func (c *cpu) reset() {
+	*c = cpu{}
 }
 
 // https://www.nesdev.org/wiki/Status_flags

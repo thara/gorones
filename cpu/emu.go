@@ -2,7 +2,7 @@ package cpu
 
 // Emu emulates CPU behaviors
 type Emu struct {
-	cpu CPU
+	cpu
 
 	t Ticker
 	m Bus

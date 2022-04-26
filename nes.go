@@ -4,6 +4,7 @@ import (
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/input"
 	"github.com/thara/gorones/mapper"
+	"github.com/thara/gorones/ppu"
 )
 
 // NES components
@@ -12,8 +13,10 @@ type NES struct {
 }
 
 func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
-	t := cpuTicker{}
-	ctx := cpuBus{mapper: m, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
+	var ppuPort ppu.Port
+	ppuEmu := ppu.NewEmu(m, &ppuPort)
+	t := cpuTicker{ppu: ppuEmu}
+	ctx := cpuBus{mapper: m, ppuPort: ppuPort, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
 		cpu: cpu.New(&t, &ctx),
 	}
@@ -28,6 +31,8 @@ func (n *NES) step() {
 }
 
 type cpuTicker struct {
+	ppu *ppu.Emu
+
 	cycles uint64
 }
 
@@ -39,6 +44,8 @@ func (c *cpuTicker) Tick() {
 type cpuBus struct {
 	wram   [0x0800]uint8
 	mapper mapper.Mapper
+
+	ppuPort ppu.Port
 
 	ctrl1, ctrl2 input.Controller
 
@@ -52,6 +59,8 @@ func (b *cpuBus) ReadCPU(addr uint16) uint8 {
 	case 0x0800 <= addr && addr <= 0x0FFF:
 		// mirrors of 0x0000-0x07FF
 		return b.wram[addr-(addr%0x0800*0x800)]
+	case 0x2000 <= addr && addr <= 0x3FFF:
+		return b.ppuPort.ReadRegister(b.toPPUAddr(addr))
 	case addr == 0x4016:
 		return b.ctrl1.Read()
 	case addr == 0x4017:
@@ -92,4 +101,10 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 	case 0x4020 <= addr && addr <= 0xFFFF:
 		b.mapper.Write(addr, value)
 	}
+}
+
+func (b *cpuBus) toPPUAddr(addr uint16) uint16 {
+	// repears every 8 bytes
+	return 0x2000 + addr%8
+
 }

@@ -1053,3 +1053,22 @@ func (c *CPU) branch(v uint16, cond bool) {
 	}
 	c.PC = uint16(base + int16(offset))
 }
+
+func (c *CPU) pushStack(v uint8) {
+	c.write(uint16(c.S)+0x0100, v)
+	c.S -= 1
+}
+
+func (c *CPU) pushStackWord(v uint16) {
+	c.pushStack(uint8(v >> 8))
+	c.pushStack(uint8(v & 0xFF))
+}
+
+func (c *CPU) pullStack() uint8 {
+	c.S += 1
+	return c.read(uint16(c.S) + 0x0100)
+}
+
+func (c *CPU) pullStackWord() uint16 {
+	return uint16(c.pullStack()) | uint16(c.pullStack())<<8
+}

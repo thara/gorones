@@ -1,5 +1,20 @@
 package cpu
 
+// CPU emulates CPU behaviors
+type CPU struct {
+	cpu
+
+	t Ticker
+	m Bus
+
+	interrupt *interrupt
+}
+
+// New returns new CPU emulator
+func New(t Ticker, m Bus) *CPU {
+	return &CPU{t: t, m: m}
+}
+
 /// cpu has cpu registers and clock cycle
 type cpu struct {
 	// https://wiki.nesdev.org/w/index.php?title=CPU_registers
@@ -16,57 +31,33 @@ type cpu struct {
 	Cycles uint64
 }
 
-// https://www.nesdev.org/wiki/Status_flags
+// PowerOn initializes CPU state on power
+func (c *CPU) PowerOn() {
+	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state
 
-// Status represents CPU Status by flags
-type Status [6]bool
-
-func NewStatus(b uint8) Status {
-	var s Status
-	s.Set(b)
-	return s
+	// IRQ disabled
+	c.P.Set(0x34)
+	c.A = 0x00
+	c.X = 0x00
+	c.Y = 0x00
+	c.S = 0xFD
+	// frame irq disabled
+	c.write(0x4017, 0x00)
+	// all channels disabled
+	c.write(0x4015, 0x00)
 }
 
-func (s *Status) u8() uint8 {
-	return bit(s[status_C]) |
-		bit(s[status_Z])<<1 |
-		bit(s[status_I])<<2 |
-		bit(s[status_D])<<3 |
-		bit(s[status_V])<<6 |
-		bit(s[status_N])<<7
+// Step emulates 1 CPU step.
+func (c *CPU) Step() {
+	c.handleInterrupt()
+
+	op := c.fetch()
+	inst := Decode(op)
+	c.execute(inst)
 }
 
-func (s *Status) Set(b uint8) {
-	s[status_C] = b&1 == 1
-	s[status_Z] = (b>>1)&1 == 1
-	s[status_I] = (b>>2)&1 == 1
-	s[status_D] = (b>>3)&1 == 1
-	s[status_V] = (b>>6)&1 == 1
-	s[status_N] = (b>>7)&1 == 1
+func (c *CPU) fetch() uint8 {
+	op := c.read(c.PC)
+	c.PC += 1
+	return op
 }
-
-func (s *Status) insert(b uint8) {
-	s.Set(s.u8() | b)
-}
-
-func (s *Status) setZN(v uint8) {
-	s[status_Z] = v == 0
-	s[status_N] = v&0x80 == 0x80
-}
-
-// statusFlag is index of `status` struct
-type statusFlag uint8
-
-const (
-	status_C statusFlag = iota // Carry
-	status_Z                   // Zero
-	status_I                   // Interrupt Disable
-	status_D                   // Decimal
-	status_V                   // Overflow
-	status_N                   // Negative
-
-	// B flags
-	// https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-	interruptB   uint8 = 0b00100000
-	instructionB uint8 = 0b00110000
-)

@@ -13,7 +13,7 @@ type Trace struct {
 }
 
 // Trace current CPU state and return snapshot
-func (e *Emu) Trace() Trace {
+func (e *CPU) Trace() Trace {
 	op := e.m.ReadCPU(e.cpu.PC)
 	inst := Decode(op)
 

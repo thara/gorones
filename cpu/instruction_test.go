@@ -32,12 +32,12 @@ var tickMock = tickFn(func() {})
 type getOperandTestSuite struct {
 	suite.Suite
 	bus []uint8
-	emu *Emu
+	emu *CPU
 }
 
 func (s *getOperandTestSuite) SetupTest() {
 	s.bus = newBusMock()
-	s.emu = NewEmu(tickMock, busMock(s.bus))
+	s.emu = New(tickMock, busMock(s.bus))
 }
 
 func (s *getOperandTestSuite) Test_implicit() {
@@ -225,12 +225,12 @@ func Test_getOperand(t *testing.T) {
 type executeTestSuite struct {
 	suite.Suite
 	bus []uint8
-	emu *Emu
+	emu *CPU
 }
 
 func (s *executeTestSuite) SetupTest() {
 	s.bus = newBusMock()
-	s.emu = NewEmu(tickMock, busMock(s.bus))
+	s.emu = New(tickMock, busMock(s.bus))
 }
 
 func (s *executeTestSuite) Test_LDA() {

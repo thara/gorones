@@ -31,7 +31,7 @@ func Test_nestest(t *testing.T) {
 	var ticker cpuTicker
 	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker}
 	nes := &NES{
-		cpu: cpu.NewEmu(&ticker, &bus),
+		cpu: cpu.New(&ticker, &bus),
 	}
 	nes.powerOn()
 

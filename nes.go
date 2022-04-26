@@ -8,14 +8,14 @@ import (
 
 // NES components
 type NES struct {
-	cpu *cpu.Emu
+	cpu *cpu.CPU
 }
 
 func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
 	t := cpuTicker{}
 	ctx := cpuBus{mapper: m, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
-		cpu: cpu.NewEmu(&t, &ctx),
+		cpu: cpu.New(&t, &ctx),
 	}
 }
 

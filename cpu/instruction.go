@@ -474,467 +474,467 @@ func Decode(opcode uint8) instruction {
 	}
 }
 
-func (e *Emu) getOperand(m addressingMode) uint16 {
+func (c *CPU) getOperand(m addressingMode) uint16 {
 	switch m {
 	case implicit:
 		return 0
 	case accumulator:
-		return uint16(e.cpu.A)
+		return uint16(c.A)
 	case immediate:
-		pc := e.cpu.PC
-		e.cpu.PC++
+		pc := c.PC
+		c.PC++
 		return pc
 	case zeroPage:
-		v := e.read(e.cpu.PC)
-		e.cpu.PC++
+		v := c.read(c.PC)
+		c.PC++
 		return uint16(v)
 	case zeroPageX:
-		e.tick()
-		v := (uint16(e.read(e.cpu.PC)) + uint16(e.cpu.X)) & 0xFF
-		e.cpu.PC++
+		c.tick()
+		v := (uint16(c.read(c.PC)) + uint16(c.X)) & 0xFF
+		c.PC++
 		return uint16(v)
 	case zeroPageY:
-		e.tick()
-		v := (uint16(e.read(e.cpu.PC)) + uint16(e.cpu.Y)) & 0xFF
-		e.cpu.PC++
+		c.tick()
+		v := (uint16(c.read(c.PC)) + uint16(c.Y)) & 0xFF
+		c.PC++
 		return uint16(v)
 	case absolute:
-		v := e.readWord(e.cpu.PC)
-		e.cpu.PC += 2
+		v := c.readWord(c.PC)
+		c.PC += 2
 		return v
 	case absoluteX:
-		v := e.readWord(e.cpu.PC)
-		e.cpu.PC += 2
-		e.tick()
-		return v + uint16(e.cpu.X)
+		v := c.readWord(c.PC)
+		c.PC += 2
+		c.tick()
+		return v + uint16(c.X)
 	case absoluteXWithPenalty:
-		v := e.readWord(e.cpu.PC)
-		e.cpu.PC += 2
-		if pageCrossed(uint16(e.cpu.X), v) {
-			e.tick()
+		v := c.readWord(c.PC)
+		c.PC += 2
+		if pageCrossed(uint16(c.X), v) {
+			c.tick()
 		}
-		return v + uint16(e.cpu.X)
+		return v + uint16(c.X)
 	case absoluteY:
-		v := e.readWord(e.cpu.PC)
-		e.cpu.PC += 2
-		e.tick()
-		return v + uint16(e.cpu.Y)
+		v := c.readWord(c.PC)
+		c.PC += 2
+		c.tick()
+		return v + uint16(c.Y)
 	case absoluteYWithPenalty:
-		v := e.readWord(e.cpu.PC)
-		e.cpu.PC += 2
-		if pageCrossed(uint16(e.cpu.Y), v) {
-			e.tick()
+		v := c.readWord(c.PC)
+		c.PC += 2
+		if pageCrossed(uint16(c.Y), v) {
+			c.tick()
 		}
-		return v + uint16(e.cpu.Y)
+		return v + uint16(c.Y)
 	case relative:
-		v := e.read(e.cpu.PC)
-		e.cpu.PC++
+		v := c.read(c.PC)
+		c.PC++
 		return uint16(v)
 	case indirect:
-		m := e.readWord(e.cpu.PC)
-		v := e.readOnIndirect(m)
-		e.cpu.PC += 2
+		m := c.readWord(c.PC)
+		v := c.readOnIndirect(m)
+		c.PC += 2
 		return v
 	case indexedIndirect:
-		m := e.read(e.cpu.PC)
-		v := e.readOnIndirect(uint16(m + e.cpu.X))
-		e.cpu.PC += 1
-		e.tick()
+		m := c.read(c.PC)
+		v := c.readOnIndirect(uint16(m + c.X))
+		c.PC += 1
+		c.tick()
 		return v
 	case indirectIndexed:
-		m := e.read(e.cpu.PC)
-		v := e.readOnIndirect(uint16(m))
-		e.cpu.PC += 1
-		e.tick()
-		return v + uint16(e.cpu.Y)
+		m := c.read(c.PC)
+		v := c.readOnIndirect(uint16(m))
+		c.PC += 1
+		c.tick()
+		return v + uint16(c.Y)
 	case indirectIndexedWithPenalty:
-		m := e.read(e.cpu.PC)
-		v := e.readOnIndirect(uint16(m))
-		e.cpu.PC += 1
-		if pageCrossed(uint16(e.cpu.Y), v) {
-			e.tick()
+		m := c.read(c.PC)
+		v := c.readOnIndirect(uint16(m))
+		c.PC += 1
+		if pageCrossed(uint16(c.Y), v) {
+			c.tick()
 		}
-		return v + uint16(e.cpu.Y)
+		return v + uint16(c.Y)
 	}
 
 	panic("unrecognized addressing mode")
 }
 
-func (e *Emu) execute(inst instruction) {
-	v := e.getOperand(inst.AddressingMode)
+func (c *CPU) execute(inst instruction) {
+	v := c.getOperand(inst.AddressingMode)
 
 	switch inst.Mnemonic {
 	case LDA:
-		e.cpu.A = e.read(v)
-		e.cpu.P.setZN(e.cpu.A)
+		c.A = c.read(v)
+		c.P.setZN(c.A)
 	case LDX:
-		e.cpu.X = e.read(v)
-		e.cpu.P.setZN(e.cpu.X)
+		c.X = c.read(v)
+		c.P.setZN(c.X)
 	case LDY:
-		e.cpu.Y = e.read(v)
-		e.cpu.P.setZN(e.cpu.Y)
+		c.Y = c.read(v)
+		c.P.setZN(c.Y)
 	case STA:
-		e.write(v, e.cpu.A)
+		c.write(v, c.A)
 	case STX:
-		e.write(v, e.cpu.X)
+		c.write(v, c.X)
 	case STY:
-		e.write(v, e.cpu.Y)
+		c.write(v, c.Y)
 	case TAX:
-		e.cpu.X = e.cpu.A
-		e.cpu.P.setZN(e.cpu.X)
-		e.tick()
+		c.X = c.A
+		c.P.setZN(c.X)
+		c.tick()
 	case TAY:
-		e.cpu.Y = e.cpu.A
-		e.cpu.P.setZN(e.cpu.Y)
-		e.tick()
+		c.Y = c.A
+		c.P.setZN(c.Y)
+		c.tick()
 	case TXA:
-		e.cpu.A = e.cpu.X
-		e.cpu.P.setZN(e.cpu.A)
-		e.tick()
+		c.A = c.X
+		c.P.setZN(c.A)
+		c.tick()
 	case TYA:
-		e.cpu.A = e.cpu.Y
-		e.cpu.P.setZN(e.cpu.A)
-		e.tick()
+		c.A = c.Y
+		c.P.setZN(c.A)
+		c.tick()
 	case TSX:
-		e.cpu.X = e.cpu.S
-		e.cpu.P.setZN(e.cpu.X)
-		e.tick()
+		c.X = c.S
+		c.P.setZN(c.X)
+		c.tick()
 	case TXS:
-		e.cpu.S = e.cpu.X
-		e.tick()
+		c.S = c.X
+		c.tick()
 
 	case PHA:
-		e.pushStack(e.cpu.A)
-		e.tick()
+		c.pushStack(c.A)
+		c.tick()
 	case PHP:
-		p := e.cpu.P.u8() | instructionB
-		e.pushStack(p)
-		e.tick()
+		p := c.P.u8() | instructionB
+		c.pushStack(p)
+		c.tick()
 	case PLA:
-		e.cpu.A = e.pullStack()
-		e.cpu.P.setZN(e.cpu.A)
-		e.tick_n(2)
+		c.A = c.pullStack()
+		c.P.setZN(c.A)
+		c.tick_n(2)
 	case PLP:
-		v := e.pullStack() & ^instructionB
+		v := c.pullStack() & ^instructionB
 		v |= 0b100000 // for nestest
-		e.cpu.P.Set(v)
-		e.tick_n(2)
+		c.P.Set(v)
+		c.tick_n(2)
 
 	case AND:
-		e.and(v)
+		c.and(v)
 	case EOR:
-		e.eor(v)
+		c.eor(v)
 	case ORA:
-		e.ora(v)
+		c.ora(v)
 	case BIT:
-		m := e.read(v)
-		b := e.cpu.A & m
-		e.cpu.P[status_Z] = b == 0
-		e.cpu.P[status_V] = m&0x40 == 0x40
-		e.cpu.P[status_N] = m&0x80 == 0x80
+		m := c.read(v)
+		b := c.A & m
+		c.P[status_Z] = b == 0
+		c.P[status_V] = m&0x40 == 0x40
+		c.P[status_N] = m&0x80 == 0x80
 
 	case ADC:
-		m := e.read(v)
-		r := e.cpu.A + m
-		if e.cpu.P[status_C] {
+		m := c.read(v)
+		r := c.A + m
+		if c.P[status_C] {
 			r += 1
 		}
-		e.carry(m, r)
-		e.cpu.A = r
-		e.cpu.P.setZN(e.cpu.A)
+		c.carry(m, r)
+		c.A = r
+		c.P.setZN(c.A)
 	case SBC:
-		e.sbc(v)
+		c.sbc(v)
 	case CMP:
-		e.cmp(e.cpu.A, v)
+		c.cmp(c.A, v)
 	case CPX:
-		e.cmp(e.cpu.X, v)
+		c.cmp(c.X, v)
 	case CPY:
-		e.cmp(e.cpu.Y, v)
+		c.cmp(c.Y, v)
 
 	case INC:
-		m := e.read(v)
+		m := c.read(v)
 		r := m + 1
-		e.write(v, r)
-		e.cpu.P.setZN(r)
-		e.tick()
+		c.write(v, r)
+		c.P.setZN(r)
+		c.tick()
 	case INX:
-		e.cpu.X += 1
-		e.cpu.P.setZN(e.cpu.X)
-		e.tick()
+		c.X += 1
+		c.P.setZN(c.X)
+		c.tick()
 	case INY:
-		e.cpu.Y += 1
-		e.cpu.P.setZN(e.cpu.Y)
-		e.tick()
+		c.Y += 1
+		c.P.setZN(c.Y)
+		c.tick()
 	case DEC:
-		m := e.read(v)
+		m := c.read(v)
 		r := m - 1
-		e.write(v, r)
-		e.cpu.P.setZN(r)
-		e.tick()
+		c.write(v, r)
+		c.P.setZN(r)
+		c.tick()
 	case DEX:
-		e.cpu.X -= 1
-		e.cpu.P.setZN(e.cpu.X)
-		e.tick()
+		c.X -= 1
+		c.P.setZN(c.X)
+		c.tick()
 	case DEY:
-		e.cpu.Y -= 1
-		e.cpu.P.setZN(e.cpu.Y)
-		e.tick()
+		c.Y -= 1
+		c.P.setZN(c.Y)
+		c.tick()
 
 	case ASL:
 		asl := func(m *uint8) {
-			e.cpu.P[status_C] = *m&0x80 == 0x80
+			c.P[status_C] = *m&0x80 == 0x80
 			*m <<= 1
-			e.cpu.P.setZN(*m)
-			e.tick()
+			c.P.setZN(*m)
+			c.tick()
 		}
 		if inst.AddressingMode == accumulator {
-			asl(&e.cpu.A)
+			asl(&c.A)
 			return
 		}
-		m := e.read(v)
+		m := c.read(v)
 		asl(&m)
-		e.write(v, m)
+		c.write(v, m)
 
 	case LSR:
 		lsr := func(m *uint8) {
-			e.cpu.P[status_C] = *m&1 == 1
+			c.P[status_C] = *m&1 == 1
 			*m >>= 1
-			e.cpu.P.setZN(*m)
-			e.tick()
+			c.P.setZN(*m)
+			c.tick()
 		}
 		if inst.AddressingMode == accumulator {
-			lsr(&e.cpu.A)
+			lsr(&c.A)
 			return
 		}
-		m := e.read(v)
+		m := c.read(v)
 		lsr(&m)
-		e.write(v, m)
+		c.write(v, m)
 	case ROL:
 		rol := func(m *uint8) {
 			carry := *m & 0x80
 			*m <<= 1
-			if e.cpu.P[status_C] {
+			if c.P[status_C] {
 				*m |= 1
 			}
-			e.cpu.P[status_C] = carry == 0x80
-			e.cpu.P.setZN(*m)
-			e.tick()
+			c.P[status_C] = carry == 0x80
+			c.P.setZN(*m)
+			c.tick()
 		}
 		if inst.AddressingMode == accumulator {
-			rol(&e.cpu.A)
+			rol(&c.A)
 			return
 		}
-		m := e.read(v)
+		m := c.read(v)
 		rol(&m)
-		e.write(v, m)
+		c.write(v, m)
 	case ROR:
 		ror := func(m *uint8) {
 			carry := *m & 1
 			*m >>= 1
-			if e.cpu.P[status_C] {
+			if c.P[status_C] {
 				*m |= 0x80
 			}
-			e.cpu.P[status_C] = carry == 1
-			e.cpu.P.setZN(*m)
-			e.tick()
+			c.P[status_C] = carry == 1
+			c.P.setZN(*m)
+			c.tick()
 		}
 		if inst.AddressingMode == accumulator {
-			ror(&e.cpu.A)
+			ror(&c.A)
 			return
 		}
-		m := e.read(v)
+		m := c.read(v)
 		ror(&m)
-		e.write(v, m)
+		c.write(v, m)
 
 	case JMP:
-		e.cpu.PC = v
+		c.PC = v
 	case JSR:
-		rtn := e.cpu.PC - 1
-		e.pushStackWord(rtn)
-		e.cpu.PC = v
-		e.tick()
+		rtn := c.PC - 1
+		c.pushStackWord(rtn)
+		c.PC = v
+		c.tick()
 	case RTS:
-		e.cpu.PC = e.pullStackWord()
-		e.cpu.PC += 1
-		e.tick_n(3)
+		c.PC = c.pullStackWord()
+		c.PC += 1
+		c.tick_n(3)
 
 	case BCC:
-		e.branch(v, !e.cpu.P[status_C])
+		c.branch(v, !c.P[status_C])
 	case BCS:
-		e.branch(v, e.cpu.P[status_C])
+		c.branch(v, c.P[status_C])
 	case BEQ:
-		e.branch(v, e.cpu.P[status_Z])
+		c.branch(v, c.P[status_Z])
 	case BMI:
-		e.branch(v, e.cpu.P[status_N])
+		c.branch(v, c.P[status_N])
 	case BNE:
-		e.branch(v, !e.cpu.P[status_Z])
+		c.branch(v, !c.P[status_Z])
 	case BPL:
-		e.branch(v, !e.cpu.P[status_N])
+		c.branch(v, !c.P[status_N])
 	case BVC:
-		e.branch(v, !e.cpu.P[status_V])
+		c.branch(v, !c.P[status_V])
 	case BVS:
-		e.branch(v, e.cpu.P[status_V])
+		c.branch(v, c.P[status_V])
 
 	case CLC:
-		e.cpu.P[status_C] = false
-		e.tick()
+		c.P[status_C] = false
+		c.tick()
 	case CLD:
-		e.cpu.P[status_D] = false
-		e.tick()
+		c.P[status_D] = false
+		c.tick()
 	case CLI:
-		e.cpu.P[status_I] = false
-		e.tick()
+		c.P[status_I] = false
+		c.tick()
 	case CLV:
-		e.cpu.P[status_V] = false
-		e.tick()
+		c.P[status_V] = false
+		c.tick()
 	case SEC:
-		e.cpu.P[status_C] = true
-		e.tick()
+		c.P[status_C] = true
+		c.tick()
 	case SED:
-		e.cpu.P[status_D] = true
-		e.tick()
+		c.P[status_D] = true
+		c.tick()
 	case SEI:
-		e.cpu.P[status_I] = true
-		e.tick()
+		c.P[status_I] = true
+		c.tick()
 
 	case BRK:
-		e.pushStackWord(e.cpu.PC)
-		e.cpu.P.insert(instructionB)
-		e.pushStack(e.cpu.P.u8())
-		e.cpu.PC = e.readWord(0xFFFE)
-		e.tick()
+		c.pushStackWord(c.PC)
+		c.P.insert(instructionB)
+		c.pushStack(c.P.u8())
+		c.PC = c.readWord(0xFFFE)
+		c.tick()
 	case NOP:
-		e.tick()
+		c.tick()
 	case RTI:
-		v := e.pullStack()
-		e.cpu.P.Set(v)
-		e.cpu.PC = e.pullStackWord()
-		e.tick_n(2)
+		v := c.pullStack()
+		c.P.Set(v)
+		c.PC = c.pullStackWord()
+		c.tick_n(2)
 
 	case LAX:
-		m := e.read(v)
-		e.cpu.A = m
-		e.cpu.P.setZN(m)
-		e.cpu.X = m
+		m := c.read(v)
+		c.A = m
+		c.P.setZN(m)
+		c.X = m
 	case SAX:
-		e.write(v, e.cpu.A&e.cpu.X)
+		c.write(v, c.A&c.X)
 	case DCP:
 		// decrementMemory excluding tick
-		m := e.read(v) - 1
-		e.cpu.P.setZN(m)
-		e.write(v, m)
-		e.cmp(e.cpu.A, v)
+		m := c.read(v) - 1
+		c.P.setZN(m)
+		c.write(v, m)
+		c.cmp(c.A, v)
 	case ISB:
 		// incrementMemory excluding tick
-		m := e.read(v) + 1
-		e.cpu.P.setZN(m)
-		e.write(v, m)
-		e.sbc(v)
+		m := c.read(v) + 1
+		c.P.setZN(m)
+		c.write(v, m)
+		c.sbc(v)
 	case SLO:
 		// arithmeticShiftLeft excluding tick
-		m := e.read(v)
-		e.cpu.P[status_C] = m&0x80 == 0x80
+		m := c.read(v)
+		c.P[status_C] = m&0x80 == 0x80
 		m <<= 1
-		e.write(v, m)
-		e.ora(v)
+		c.write(v, m)
+		c.ora(v)
 	case RLA:
 		// rotateLeft excluding tick
-		m := e.read(v)
+		m := c.read(v)
 		carry := m & 0x80
 		m <<= 1
-		if e.cpu.P[status_C] {
+		if c.P[status_C] {
 			m |= 0x01
 		}
-		e.cpu.P[status_C] = carry == 0x80
-		e.cpu.P.setZN(m)
-		e.write(v, m)
-		e.and(v)
+		c.P[status_C] = carry == 0x80
+		c.P.setZN(m)
+		c.write(v, m)
+		c.and(v)
 	case SRE:
 		// logicalShiftRight excluding tick
-		m := e.read(v)
-		e.cpu.P[status_C] = m&1 == 1
+		m := c.read(v)
+		c.P[status_C] = m&1 == 1
 		m >>= 1
-		e.cpu.P.setZN(m)
-		e.write(v, m)
-		e.eor(v)
+		c.P.setZN(m)
+		c.write(v, m)
+		c.eor(v)
 	case RRA:
 		// rotateRight excluding tick
-		m := e.read(v)
+		m := c.read(v)
 		carry := m & 1
 		m >>= 1
-		if e.cpu.P[status_C] {
+		if c.P[status_C] {
 			m |= 0x80
 		}
-		e.cpu.P[status_C] = carry == 1
-		e.cpu.P.setZN(m)
-		e.write(v, m)
-		e.adc(v)
+		c.P[status_C] = carry == 1
+		c.P.setZN(m)
+		c.write(v, m)
+		c.adc(v)
 	default:
 		panic(fmt.Sprintf("unrecognized mnemonic: %d", inst.Mnemonic))
 	}
 }
 
-func (e *Emu) and(v uint16) {
-	e.cpu.A &= e.read(v)
-	e.cpu.P.setZN(e.cpu.A)
+func (c *CPU) and(v uint16) {
+	c.A &= c.read(v)
+	c.P.setZN(c.A)
 }
 
-func (e *Emu) eor(v uint16) {
-	e.cpu.A ^= e.read(v)
-	e.cpu.P.setZN(e.cpu.A)
+func (c *CPU) eor(v uint16) {
+	c.A ^= c.read(v)
+	c.P.setZN(c.A)
 }
 
-func (e *Emu) ora(v uint16) {
-	e.cpu.A |= e.read(v)
-	e.cpu.P.setZN(e.cpu.A)
+func (c *CPU) ora(v uint16) {
+	c.A |= c.read(v)
+	c.P.setZN(c.A)
 }
 
-func (e *Emu) carry(m, r uint8) {
-	a7 := e.cpu.A >> 7 & 1
+func (c *CPU) carry(m, r uint8) {
+	a7 := c.A >> 7 & 1
 	m7 := m >> 7 & 1
 	c6 := a7 ^ m7 ^ (r >> 7 & 1)
 	c7 := (a7 & m7) | (a7 & c6) | (m7 & c6)
-	e.cpu.P[status_C] = c7 == 1
-	e.cpu.P[status_V] = c6^c7 == 1
+	c.P[status_C] = c7 == 1
+	c.P[status_V] = c6^c7 == 1
 }
 
-func (e *Emu) adc(v uint16) {
-	m := e.read(v)
-	r := e.cpu.A + m
-	if e.cpu.P[status_C] {
+func (c *CPU) adc(v uint16) {
+	m := c.read(v)
+	r := c.A + m
+	if c.P[status_C] {
 		r += 1
 	}
-	e.carry(m, r)
-	e.cpu.A = r
-	e.cpu.P.setZN(e.cpu.A)
+	c.carry(m, r)
+	c.A = r
+	c.P.setZN(c.A)
 }
 
-func (e *Emu) sbc(v uint16) {
-	m := ^e.read(v)
-	r := e.cpu.A + m
-	if e.cpu.P[status_C] {
+func (c *CPU) sbc(v uint16) {
+	m := ^c.read(v)
+	r := c.A + m
+	if c.P[status_C] {
 		r += 1
 	}
-	e.carry(m, r)
-	e.cpu.A = r
-	e.cpu.P.setZN(e.cpu.A)
+	c.carry(m, r)
+	c.A = r
+	c.P.setZN(c.A)
 }
 
-func (e *Emu) cmp(x uint8, v uint16) {
-	r := int16(x) - int16(e.read(v))
-	e.cpu.P.setZN(uint8(r))
-	e.cpu.P[status_C] = 0 <= r
+func (c *CPU) cmp(x uint8, v uint16) {
+	r := int16(x) - int16(c.read(v))
+	c.P.setZN(uint8(r))
+	c.P[status_C] = 0 <= r
 }
 
-func (e *Emu) branch(v uint16, cond bool) {
+func (c *CPU) branch(v uint16, cond bool) {
 	if !cond {
 		return
 	}
-	e.tick()
-	base := int16(e.cpu.PC)
+	c.tick()
+	base := int16(c.PC)
 	offset := int8(v) // to negative number
 	if pageCrossed(int16(offset), base) {
-		e.tick()
+		c.tick()
 	}
-	e.cpu.PC = uint16(base + int16(offset))
+	c.PC = uint16(base + int16(offset))
 }

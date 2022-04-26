@@ -13,6 +13,8 @@ type Mapper interface {
 
 	// Write writes a byte into the mapper.
 	Write(addr uint16, value uint8)
+
+	Mirroring() Mirroring
 }
 
 // Mapper creates a mapper object from this rom's data
@@ -68,5 +70,13 @@ func (m *mapper0) Write(addr uint16, value uint8) {
 	switch {
 	case 0x0000 <= addr && addr <= 0x1FFF:
 		m.chr[addr] = value
+	}
+}
+
+func (m *mapper0) Mirroring() Mirroring {
+	if m.mirrored {
+		return Mirroring_Vertical
+	} else {
+		return Mirroring_Horizontal
 	}
 }

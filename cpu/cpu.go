@@ -1,7 +1,5 @@
 package cpu
 
-import "fmt"
-
 /// cpu has cpu registers and clock cycle
 type cpu struct {
 	// https://wiki.nesdev.org/w/index.php?title=CPU_registers
@@ -72,23 +70,3 @@ const (
 	interruptB   uint8 = 0b00100000
 	instructionB uint8 = 0b00110000
 )
-
-// interrupt Kinds of CPU interrupts
-type interrupt uint8
-
-// currently supports NMI and IRQ only
-const (
-	_ interrupt = iota
-	NMI
-	IRQ
-)
-
-func (i interrupt) vector() uint16 {
-	switch i {
-	case NMI:
-		return 0xFFFA
-	case IRQ:
-		return 0xFFFE
-	}
-	panic(fmt.Sprintf("unsupported interrupt : %d", i))
-}

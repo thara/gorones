@@ -238,7 +238,7 @@ func (s *executeTestSuite) Test_LDA() {
 	s.bus[0x020F] = 0xA9
 	s.bus[0x0210] = 0x31
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x31, s.emu.cpu.A)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -252,7 +252,7 @@ func (s *executeTestSuite) Test_STA() {
 	s.bus[0x0210] = 0x19
 	s.bus[0x0211] = 0x04
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x91, s.bus[0x0419])
 	s.EqualValues(4, s.emu.cpu.Cycles)
@@ -264,7 +264,7 @@ func (s *executeTestSuite) Test_TAX() {
 	s.emu.cpu.A = 0x83
 	s.bus[0x020F] = 0xAA
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x83, s.emu.cpu.X)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -276,7 +276,7 @@ func (s *executeTestSuite) Test_TYA() {
 	s.emu.cpu.Y = 0xF0
 	s.bus[0x020F] = 0x98
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xF0, s.emu.cpu.A)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -288,7 +288,7 @@ func (s *executeTestSuite) Test_TSX() {
 	s.emu.cpu.S = 0xF3
 	s.bus[0x020F] = 0xBA
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xF3, s.emu.cpu.X)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -301,7 +301,7 @@ func (s *executeTestSuite) Test_PHA() {
 	s.emu.cpu.A = 0x72
 	s.bus[0x020F] = 0x48
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xFC, s.emu.cpu.S)
 	s.EqualValues(0x72, s.bus[0x01FD])
@@ -318,7 +318,7 @@ func (s *executeTestSuite) Test_PHP() {
 	s.emu.cpu.P[status_C] = true
 	s.bus[0x020F] = 0x08
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xFC, s.emu.cpu.S)
 	s.EqualValues(s.emu.cpu.P.u8()|instructionB, s.bus[0x01FD])
@@ -331,7 +331,7 @@ func (s *executeTestSuite) Test_PLP() {
 	s.bus[0x020F] = 0x28
 	s.bus[0x01C0] = 0x7A
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xC0, s.emu.cpu.S)
 	s.EqualValues(4, s.emu.cpu.Cycles)
@@ -344,7 +344,7 @@ func (s *executeTestSuite) Test_EOR() {
 	s.bus[0x020F] = 0x49
 	s.bus[0x0210] = 0x38
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x19, s.emu.cpu.A)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -359,7 +359,7 @@ func (s *executeTestSuite) Test_BIT() {
 	s.bus[0x0211] = 0x03
 	s.bus[0x03B0] = 0b11000000
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(4, s.emu.cpu.Cycles)
 	s.EqualValues(0b11000000, s.emu.cpu.P.u8())
@@ -392,7 +392,7 @@ func (s *executeTestSuite) Test_ADC() {
 			s.bus[0x0211] = 0x04
 			s.bus[0x04D3] = tt.m
 
-			s.emu.Step()
+			s.emu.Step(nil)
 
 			s.EqualValues(tt.expectedA, s.emu.cpu.A)
 			s.EqualValues(tt.expectedP, s.emu.cpu.P.u8())
@@ -406,7 +406,7 @@ func (s *executeTestSuite) Test_CPY() {
 	s.bus[0x020F] = 0xCC
 	s.bus[0x0210] = 0x36
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(4, s.emu.cpu.Cycles)
 	s.EqualValues(0b00000001, s.emu.cpu.P.u8())
@@ -419,7 +419,7 @@ func (s *executeTestSuite) Test_INC() {
 	s.bus[0x0211] = 0x04
 	s.bus[0x04D3] = 0x7F
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(6, s.emu.cpu.Cycles)
 	s.EqualValues(0x80, s.bus[0x04D3])
@@ -433,7 +433,7 @@ func (s *executeTestSuite) Test_DEC() {
 	s.bus[0x0211] = 0x04
 	s.bus[0x04D3] = 0xC0
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(6, s.emu.cpu.Cycles)
 	s.EqualValues(0xBF, s.bus[0x04D3])
@@ -446,7 +446,7 @@ func (s *executeTestSuite) Test_ASL() {
 
 	s.bus[0x020F] = 0x0A
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(2, s.emu.cpu.Cycles)
 	s.EqualValues(0b00010100, s.emu.cpu.A)
@@ -471,7 +471,7 @@ func (s *executeTestSuite) Test_ROL() {
 			s.emu.cpu.A = 0b10001010
 			s.emu.cpu.P.Set(tt.p)
 
-			s.emu.Step()
+			s.emu.Step(nil)
 
 			s.EqualValues(2, s.emu.cpu.Cycles)
 			s.EqualValues(tt.expectedA, s.emu.cpu.A)
@@ -488,7 +488,7 @@ func (s *executeTestSuite) Test_JSR() {
 	s.bus[0x0210] = 0x31
 	s.bus[0x0211] = 0x40
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xBD, s.emu.cpu.S)
 	s.EqualValues(0x4031, s.emu.cpu.PC)
@@ -505,7 +505,7 @@ func (s *executeTestSuite) Test_RTS() {
 	s.bus[0x01BE] = 0x11
 	s.bus[0x01BF] = 0x02
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0xBF, s.emu.cpu.S)
 	s.EqualValues(0x0212, s.emu.cpu.PC)
@@ -533,7 +533,7 @@ func (s *executeTestSuite) Test_BCC() {
 			s.bus[0x0031] = 0x90
 			s.bus[0x0032] = tt.operand
 
-			s.emu.Step()
+			s.emu.Step(nil)
 
 			s.EqualValues(tt.expectedPC, s.emu.cpu.PC)
 			s.EqualValues(tt.expectedCycles, s.emu.cpu.Cycles)
@@ -547,7 +547,7 @@ func (s *executeTestSuite) Test_CLD() {
 
 	s.bus[0x020F] = 0xD8
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x0210, s.emu.cpu.PC)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -560,7 +560,7 @@ func (s *executeTestSuite) Test_SEI() {
 
 	s.bus[0x020F] = 0x78
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x0210, s.emu.cpu.PC)
 	s.EqualValues(2, s.emu.cpu.Cycles)
@@ -576,7 +576,7 @@ func (s *executeTestSuite) Test_BRK() {
 	s.bus[0xFFFE] = 0x23
 	s.bus[0xFFFF] = 0x40
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x4023, s.emu.cpu.PC)
 	s.EqualValues(7, s.emu.cpu.Cycles)
@@ -594,7 +594,7 @@ func (s *executeTestSuite) Test_RTI() {
 	s.bus[0x01BE] = 0x11
 	s.bus[0x01BF] = 0x02
 
-	s.emu.Step()
+	s.emu.Step(nil)
 
 	s.EqualValues(0x0211, s.emu.cpu.PC)
 	s.EqualValues(6, s.emu.cpu.Cycles)

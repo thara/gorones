@@ -2,17 +2,17 @@ package cpu
 
 import "fmt"
 
-// interrupt Kinds of CPU interrupts
-type interrupt uint8
+// Interrupt Kinds of CPU interrupts
+type Interrupt uint8
 
 // currently supports NMI and IRQ only
 const (
-	_ interrupt = iota
+	NoInterrupt Interrupt = iota
 	NMI
 	IRQ
 )
 
-func (i interrupt) vector() uint16 {
+func (i Interrupt) vector() uint16 {
 	switch i {
 	case NMI:
 		return 0xFFFA
@@ -22,13 +22,14 @@ func (i interrupt) vector() uint16 {
 	panic(fmt.Sprintf("unsupported interrupt : %d", i))
 }
 
-func (c *CPU) handleInterrupt() {
-	if c.interrupt == nil {
+func (c *CPU) handleInterrupt(intr *Interrupt) {
+	if intr == nil {
 		return
 	}
 
-	intr := *c.interrupt
-	switch intr {
+	switch *intr {
+	case NoInterrupt:
+		return
 	case NMI: // interrupted
 	case IRQ:
 		if !c.P[status_I] {
@@ -46,5 +47,5 @@ func (c *CPU) handleInterrupt() {
 	c.pushStack(c.P.u8() | interruptB)
 	c.P[status_I] = true
 	c.PC = c.readWord(intr.vector())
-	c.interrupt = nil
+	*intr = NoInterrupt
 }

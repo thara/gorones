@@ -10,6 +10,8 @@ import (
 // NES components
 type NES struct {
 	cpu *cpu.CPU
+
+	interrupt *cpu.Interrupt
 }
 
 func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
@@ -26,7 +28,7 @@ func (n *NES) powerOn() {
 }
 
 func (n *NES) step() {
-	n.cpu.Step()
+	n.cpu.Step(n.interrupt)
 }
 
 type cpuTicker struct {

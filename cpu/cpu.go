@@ -6,8 +6,6 @@ type CPU struct {
 
 	t Ticker
 	m Bus
-
-	interrupt *interrupt
 }
 
 // New returns new CPU emulator
@@ -48,8 +46,8 @@ func (c *CPU) PowerOn() {
 }
 
 // Step emulates 1 CPU step.
-func (c *CPU) Step() {
-	c.handleInterrupt()
+func (c *CPU) Step(intr *Interrupt) {
+	c.handleInterrupt(intr)
 
 	op := c.fetch()
 	inst := Decode(op)

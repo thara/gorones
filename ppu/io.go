@@ -2,7 +2,7 @@ package ppu
 
 import "github.com/thara/gorones/mapper"
 
-func (p *PPU) read(addr vramAddr) uint8 {
+func (p *PPU) read(addr uint16) uint8 {
 	switch {
 	case 0x0000 <= addr && addr <= 0x1FFF:
 		return p.mapper.Read(addr)
@@ -17,7 +17,7 @@ func (p *PPU) read(addr vramAddr) uint8 {
 	}
 }
 
-func (p *PPU) write(addr vramAddr, value uint8) {
+func (p *PPU) write(addr uint16, value uint8) {
 	switch {
 	case 0x0000 <= addr && addr <= 0x1FFF:
 		p.mapper.Write(addr, value)

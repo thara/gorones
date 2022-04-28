@@ -15,11 +15,14 @@ type NES struct {
 }
 
 func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
+	intr := cpu.NoInterrupt
+
 	ppu := ppu.New(m)
-	t := cpuTicker{ppu: ppu}
+	t := cpuTicker{ppu: ppu, interrupt: &intr}
 	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
-		cpu: cpu.New(&t, &ctx),
+		cpu:       cpu.New(&t, &ctx),
+		interrupt: &intr,
 	}
 }
 
@@ -35,14 +38,16 @@ type cpuTicker struct {
 	ppu *ppu.PPU
 
 	cycles uint64
+
+	interrupt *cpu.Interrupt
 }
 
 func (c *cpuTicker) Tick() {
 	c.cycles += 1
 	// 3 PPU cycles per 1 CPU cycle
-	c.ppu.Step()
-	c.ppu.Step()
-	c.ppu.Step()
+	c.ppu.Step(c.interrupt)
+	c.ppu.Step(c.interrupt)
+	c.ppu.Step(c.interrupt)
 }
 
 // https://www.nesdev.org/wiki/CPU_memory_map

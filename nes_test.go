@@ -14,6 +14,7 @@ import (
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/input"
 	"github.com/thara/gorones/mapper"
+	"github.com/thara/gorones/ppu"
 )
 
 func Test_nestest(t *testing.T) {
@@ -28,10 +29,14 @@ func Test_nestest(t *testing.T) {
 
 	var ctrl1, ctrl2 input.StandardController
 
-	var ticker cpuTicker
+	intr := cpu.NoInterrupt
+
+	ppu := ppu.New(m)
+	ticker := cpuTicker{ppu: ppu, interrupt: &intr}
 	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker}
 	nes := &NES{
-		cpu: cpu.New(&ticker, &bus),
+		cpu:       cpu.New(&ticker, &bus),
+		interrupt: &intr,
 	}
 	nes.powerOn()
 

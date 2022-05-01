@@ -40,9 +40,11 @@ func newEmulator(path string) (*Emulator, error) {
 	renderer := newRenderer()
 
 	var emu Emulator
+	emu.renderer = renderer
+
 	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer)
 	emu.nes.PowerOn()
-	emu.renderer = renderer
+
 	return &emu, nil
 }
 

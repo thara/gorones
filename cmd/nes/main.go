@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/thara/gorones/ppu"
 )
 
 func main() {
@@ -27,7 +28,9 @@ func main() {
 		log.Fatalf("fail to initialize emulator for %s: %v", path, err)
 	}
 
-	ebiten.SetWindowSize(640, 480)
+	scale := 4
+
+	ebiten.SetWindowSize(ppu.WIDTH*scale, ppu.HEIGHT*scale)
 	ebiten.SetWindowTitle("gorones")
 	if err := ebiten.RunGame(emu); err != nil {
 		log.Fatal(err)

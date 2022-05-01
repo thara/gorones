@@ -14,10 +14,10 @@ type NES struct {
 	interrupt *cpu.Interrupt
 }
 
-func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller) *NES {
+func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, renderer ppu.FrameRenderer) *NES {
 	intr := cpu.NoInterrupt
 
-	ppu := ppu.New(m)
+	ppu := ppu.New(m, renderer)
 	t := cpuTicker{ppu: ppu, interrupt: &intr}
 	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{

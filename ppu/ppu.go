@@ -48,13 +48,16 @@ type PPU struct {
 	mapper    mapper.Mapper
 	mirroring mapper.Mirroring
 
+	renderer FrameRenderer
+
 	frameOdd bool
 }
 
-func New(mapper mapper.Mapper) *PPU {
+func New(mapper mapper.Mapper, renderer FrameRenderer) *PPU {
 	ppu := &PPU{
 		mapper:    mapper,
 		mirroring: mapper.Mirroring(),
+		renderer:  renderer,
 	}
 	ppu.Port = Port{ppu: ppu}
 	return ppu
@@ -140,7 +143,8 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 		}
 
 	// post-render
-	case p.scan.line == 240:
+	case p.scan.line == 240 && p.scan.dot == 1:
+		p.renderer.Update(&p.buf)
 
 	// NMI
 	case p.scan.line == 241 && p.scan.dot == 1:
@@ -281,3 +285,7 @@ func fineY(v uint16) uint16 { return v & 0b111000000000000 >> 12 }
 // https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
 func tileAddr(v uint16) uint16 { return 0x2000 | (uint16(v) & 0x0FFF) }
 func attrAddr(v uint16) uint16 { return 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07) }
+
+type FrameRenderer interface {
+	Update(*[WIDTH * HEIGHT]uint8)
+}

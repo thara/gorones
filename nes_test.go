@@ -17,6 +17,10 @@ import (
 	"github.com/thara/gorones/ppu"
 )
 
+type nopFrameRenderer struct{}
+
+func (nopFrameRenderer) Update(*[ppu.WIDTH * ppu.HEIGHT]uint8) {}
+
 func Test_nestest(t *testing.T) {
 	f, err := os.Open("testdata/nestest.nes")
 	require.NoError(t, err)
@@ -31,7 +35,7 @@ func Test_nestest(t *testing.T) {
 
 	intr := cpu.NoInterrupt
 
-	ppu := ppu.New(m)
+	ppu := ppu.New(m, new(nopFrameRenderer))
 	ticker := cpuTicker{ppu: ppu, interrupt: &intr}
 	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker}
 	nes := &NES{

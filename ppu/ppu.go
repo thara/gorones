@@ -144,7 +144,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 
 	// post-render
 	case p.scan.line == 240 && p.scan.dot == 1:
-		p.renderer.Update(&p.buf)
+		p.renderer.UpdateFrame(&p.buf)
 
 	// NMI
 	case p.scan.line == 241 && p.scan.dot == 1:
@@ -287,5 +287,5 @@ func tileAddr(v uint16) uint16 { return 0x2000 | (uint16(v) & 0x0FFF) }
 func attrAddr(v uint16) uint16 { return 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07) }
 
 type FrameRenderer interface {
-	Update(*[WIDTH * HEIGHT]uint8)
+	UpdateFrame(*[WIDTH * HEIGHT]uint8)
 }

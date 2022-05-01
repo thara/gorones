@@ -1,30 +1,35 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type GUI struct{}
-
-func (g *GUI) Update() error {
-	return nil
-}
-
-func (g *GUI) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
-}
-
-func (g *GUI) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
-}
-
 func main() {
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [OPTIONS] ROM\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+	if flag.NArg() < 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	path := os.Args[1]
+
+	emu, err := newEmulator(path)
+	if err != nil {
+		log.Fatalf("fail to initialize emulator for %s: %v", path, err)
+	}
+
 	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("Hello, World!")
-	if err := ebiten.RunGame(&GUI{}); err != nil {
+	ebiten.SetWindowTitle("gorones")
+	if err := ebiten.RunGame(emu); err != nil {
 		log.Fatal(err)
 	}
 }

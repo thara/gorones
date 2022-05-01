@@ -7,6 +7,8 @@ import (
 	"github.com/thara/gorones/ppu"
 )
 
+const cpuCyclesPerFrame = 29781
+
 // NES components
 type NES struct {
 	cpu *cpu.CPU
@@ -26,8 +28,14 @@ func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, renderer ppu.FrameRe
 	}
 }
 
-func (n *NES) powerOn() {
+func (n *NES) PowerOn() {
 	n.cpu.PowerOn()
+}
+
+func (n *NES) RunFrame() {
+	for i := 0; i < cpuCyclesPerFrame; i++ {
+		n.step()
+	}
 }
 
 func (n *NES) step() {
@@ -64,13 +72,10 @@ type cpuBus struct {
 
 func (b *cpuBus) ReadCPU(addr uint16) uint8 {
 	switch {
-	case 0x0000 <= addr && addr <= 0x07FF:
-		return b.wram[addr]
-	case 0x0800 <= addr && addr <= 0x0FFF:
-		// mirrors of 0x0000-0x07FF
-		return b.wram[addr-(addr%0x0800*0x800)]
+	case 0x0000 <= addr && addr <= 0x1FFF:
+		return b.wram[addr%0x0800]
 	case 0x2000 <= addr && addr <= 0x3FFF:
-		return b.ppuPort.ReadRegister(b.toPPUAddr(addr))
+		return b.ppuPort.ReadRegister(ppuAddr(addr))
 	case addr == 0x4016:
 		return b.ctrl1.Read()
 	case addr == 0x4017:
@@ -98,11 +103,10 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 	}
 
 	switch {
-	case 0x0000 <= addr && addr <= 0x07FF:
-		b.wram[addr] = value
-	case 0x0800 <= addr && addr <= 0x0FFF:
-		// mirrors of 0x0000-0x07FF
-		b.wram[addr-(addr%0x0800*0x800)] = value
+	case 0x0000 <= addr && addr <= 0x1FFF:
+		b.wram[addr%0x0800] = value
+	case 0x2000 <= addr && addr <= 0x3FFF:
+		b.ppuPort.WriteRegister(ppuAddr(addr), value)
 	case addr == 0x4016:
 		b.ctrl1.Write(value)
 	case addr == 0x4017:
@@ -113,7 +117,7 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 	}
 }
 
-func (b *cpuBus) toPPUAddr(addr uint16) uint16 {
+func ppuAddr(addr uint16) uint16 {
 	// repears every 8 bytes
 	return 0x2000 + addr%8
 

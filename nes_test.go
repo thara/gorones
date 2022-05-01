@@ -19,7 +19,7 @@ import (
 
 type nopFrameRenderer struct{}
 
-func (nopFrameRenderer) Update(*[ppu.WIDTH * ppu.HEIGHT]uint8) {}
+func (nopFrameRenderer) UpdateFrame(*[ppu.WIDTH * ppu.HEIGHT]uint8) {}
 
 func Test_nestest(t *testing.T) {
 	f, err := os.Open("testdata/nestest.nes")
@@ -42,7 +42,7 @@ func Test_nestest(t *testing.T) {
 		cpu:       cpu.New(&ticker, &bus),
 		interrupt: &intr,
 	}
-	nes.powerOn()
+	nes.PowerOn()
 
 	nes.cpu.PC = 0xC000
 	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state#cite_ref-1

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/thara/gorones"
 	"github.com/thara/gorones/mapper"
 	"github.com/thara/gorones/ppu"
@@ -51,6 +52,7 @@ func (e *Emulator) Update() error {
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
 	screen.ReplacePixels(e.renderer.pixels())
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("tps: %f", ebiten.CurrentTPS()))
 }
 
 func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

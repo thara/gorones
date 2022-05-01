@@ -20,10 +20,10 @@ func newRenderer() *renderer {
 
 func (r *renderer) UpdateFrame(buf *[ppu.WIDTH * ppu.HEIGHT]uint8) {
 	for i, v := range buf {
-		r.px[i] = palettes[v]
-		r.px[i+1] = palettes[v+1]
-		r.px[i+2] = palettes[v+2]
-		r.px[i+3] = palettes[v+3]
+		r.px[i*4] = palettes[v]
+		r.px[i*4+1] = palettes[v+1]
+		r.px[i*4+2] = palettes[v+2]
+		r.px[i*4+3] = palettes[v+3]
 	}
 }
 
@@ -47,4 +47,4 @@ var rgba []uint32 = []uint32{
 	0xF8F8F8FF, 0x3CBCFCFF, 0x6888FCFF, 0x9878F8FF, 0xF878F8FF, 0xF85898FF, 0xF87858FF, 0xFCA044FF,
 	0xF8B800FF, 0xB8F818FF, 0x58D854FF, 0x58F898FF, 0x00E8D8FF, 0x787878FF, 0x000000FF, 0x000000FF,
 	0xFCFCFCFF, 0xA4E4FCFF, 0xB8B8F8FF, 0xD8B8F8FF, 0xF8B8F8FF, 0xF8A4C0FF, 0xF0D0B0FF, 0xFCE0A8FF,
-	0xF8D878FF, 0xD8F878FF, 0xB8F8B8FF, 0xB8F8D8FF, 0x00FCFCFF, 0xF8D8F8FF, 0x000000FF, 0x000000}
+	0xF8D878FF, 0xD8F878FF, 0xB8F8B8FF, 0xB8F8D8FF, 0x00FCFCFF, 0xF8D8F8FF, 0x000000FF, 0x000000FF}

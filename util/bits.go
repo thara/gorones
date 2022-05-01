@@ -11,6 +11,6 @@ func Bit(b bool) uint8 {
 	return 0
 }
 
-func NthBit[T constraints.Unsigned](b T, n int) T {
+func NthBit[T, N constraints.Unsigned](b T, n N) T {
 	return (b >> n) & 1
 }

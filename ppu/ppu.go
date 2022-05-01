@@ -3,10 +3,15 @@ package ppu
 import (
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/mapper"
+	"github.com/thara/gorones/util"
 )
 
 const spriteCount = 64
 const tileHeight = 8
+const pixelDelayed = 2 // Notes in https://www.nesdev.org/w/images/default/d/d1/Ntsc_timing.png
+
+const WIDTH = 256
+const HEIGHT = 240
 
 type PPU struct {
 	ppu
@@ -16,6 +21,8 @@ type PPU struct {
 	palletes [0x0020]uint8
 	oam      [4 * spriteCount]uint8
 
+	buf [WIDTH * HEIGHT]uint8
+
 	cpuDataBus uint8
 
 	bg struct {
@@ -24,6 +31,13 @@ type PPU struct {
 		at   uint8  // attribute table byte
 		low  uint16
 		high uint16
+
+		shiftL     uint16
+		shiftH     uint16
+		attrShiftL uint8
+		attrShiftH uint8
+		attrLatchL uint8
+		attrLatchH uint8
 	}
 
 	scan struct {
@@ -71,7 +85,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			// name table
 			case 1:
 				p.bg.addr = tileAddr(p.ppu.v)
-				//TODO tile reload
+				p.shiftReload()
 			case 2:
 				p.bg.nt = p.read(p.bg.addr)
 			// attribute
@@ -101,7 +115,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			p.bg.high = uint16(p.read(p.bg.addr))
 			//TODO incr coarse Y
 		case p.scan.dot == 257:
-			//TODO reload shift
+			p.shiftReload()
 			//TODO copy X
 		case 280 <= p.scan.dot && p.scan.dot <= 304 && pre:
 			//TODO copy Y
@@ -145,6 +159,51 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			p.frameOdd = !p.frameOdd
 		}
 	}
+}
+
+func (p *PPU) pixel() {
+	x := p.scan.dot - pixelDelayed
+
+	var pallete uint16
+
+	// visible
+	if p.scan.line < 240 && 0 <= x && x < 256 {
+		// background
+		if p.mask.bg && (!p.mask.bgLeft && x < 8) {
+			pallete = util.NthBit(p.bg.shiftH, 15-p.x)<<1 |
+				util.NthBit(p.bg.shiftL, 15-p.x)
+			if 0 < pallete {
+				pallete |= uint16(util.NthBit(p.bg.attrShiftH, 7-p.x)<<1|
+					util.NthBit(p.bg.attrShiftL, 7-p.x)) << 2
+			}
+		}
+		//TODO sprites
+
+		var addr uint16
+		if p.renderingEnabled() {
+			addr = pallete
+		}
+		p.buf[p.scan.line*256+x] = p.read(addr)
+	}
+
+	// background shift
+	p.bg.shiftL <<= 1
+	p.bg.shiftH <<= 1
+	p.bg.attrShiftH <<= 1
+	p.bg.attrShiftH |= p.bg.attrLatchH
+	p.bg.attrShiftL <<= 1
+	p.bg.attrShiftL |= p.bg.attrLatchL
+}
+
+func (p *PPU) renderingEnabled() bool {
+	return p.mask.bg || p.mask.spr
+}
+
+func (p *PPU) shiftReload() {
+	p.bg.shiftL = (p.bg.shiftL & 0xFF00) | p.bg.low
+	p.bg.shiftH = (p.bg.shiftH & 0xFF00) | p.bg.high
+	p.bg.attrLatchH = p.bg.at & 1
+	p.bg.attrLatchL = p.bg.at & 2
 }
 
 type ppu struct {

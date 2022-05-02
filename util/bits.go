@@ -11,6 +11,10 @@ func Bit(b bool) uint8 {
 	return 0
 }
 
-func NthBit[T, N constraints.Unsigned](b T, n N) T {
+func NthBit[T constraints.Unsigned, N constraints.Integer](b T, n N) T {
 	return (b >> n) & 1
+}
+
+func IsSet[T constraints.Unsigned, N constraints.Integer](b T, n N) bool {
+	return (b>>n)&1 == 1
 }

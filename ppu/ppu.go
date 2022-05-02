@@ -10,6 +10,8 @@ const spriteCount = 64
 const tileHeight = 8
 const pixelDelayed = 2 // Notes in https://www.nesdev.org/w/images/default/d/d1/Ntsc_timing.png
 
+const spriteLimit = 8
+
 const WIDTH = 256
 const HEIGHT = 240
 
@@ -38,6 +40,12 @@ type PPU struct {
 		attrShiftH uint8
 		attrLatchL uint8
 		attrLatchH uint8
+	}
+
+	spr struct {
+		oam          [4 * spriteCount]byte // https://www.nesdev.org/wiki/PPU_OAM
+		primaryOAM   [8]Sprite
+		secondaryOAM [8]Sprite
 	}
 
 	scan struct {
@@ -77,7 +85,49 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 
 	// visible
 	case 0 <= p.scan.line && p.scan.line <= 239:
-		//TODO sprites
+		// sprites
+		switch p.scan.dot {
+		case 1:
+			for i := range p.spr.secondaryOAM {
+				p.spr.secondaryOAM[i].clear()
+			}
+			// clear OAM
+			if pre {
+				p.status.sprOverflow = false
+				p.status.spr0Hit = false
+			}
+		case 257:
+			for i, n := uint8(0), 0; i < spriteCount || n < spriteLimit; i++ {
+				y := p.spr.oam[i*4]
+				row := p.scan.line - uint16(y)
+				if row < 0 || p.sprHeight() <= row {
+					continue
+				}
+				p.spr.secondaryOAM[n].enabled = true
+				p.spr.secondaryOAM[n].index = i
+				p.spr.secondaryOAM[n].y = y
+				p.spr.secondaryOAM[n].tile = p.spr.oam[i*4+1]
+				p.spr.secondaryOAM[n].attr = p.spr.oam[i*4+2]
+				p.spr.secondaryOAM[n].x = p.spr.oam[i*4+3]
+				n++
+				if spriteLimit <= n {
+					p.status.sprOverflow = true
+				}
+			}
+		case 321:
+			for i := 0; i < spriteLimit; i++ {
+				p.spr.primaryOAM[i] = p.spr.secondaryOAM[i]
+				var addr uint16
+				if p.ctrl.spr8x16 {
+					addr = uint16(p.spr.primaryOAM[i].tile&1)*0x1000 + uint16(p.spr.primaryOAM[i].tile&^1)*16
+				} else {
+					addr = uint16(util.Bit(p.ctrl.sprTable))*0x1000 + uint16(p.spr.primaryOAM[i].tile)*16
+				}
+				//TODO flip vertical
+				p.spr.primaryOAM[i].low = p.read(addr)
+				p.spr.primaryOAM[i].high = p.read(addr + 8)
+			}
+		}
 		// background
 		switch {
 		case 2 <= p.scan.dot && p.scan.dot <= 255:
@@ -168,26 +218,65 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 func (p *PPU) pixel() {
 	x := p.scan.dot - pixelDelayed
 
-	var pallete uint16
+	var bg uint16
 
 	// visible
 	if p.scan.line < 240 && 0 <= x && x < 256 {
 		// background
 		if p.mask.bg && (!p.mask.bgLeft && x < 8) {
-			pallete = util.NthBit(p.bg.shiftH, 15-p.x)<<1 |
+			bg = util.NthBit(p.bg.shiftH, 15-p.x)<<1 |
 				util.NthBit(p.bg.shiftL, 15-p.x)
-			if 0 < pallete {
-				pallete |= uint16(util.NthBit(p.bg.attrShiftH, 7-p.x)<<1|
+			if 0 < bg {
+				bg |= uint16(util.NthBit(p.bg.attrShiftH, 7-p.x)<<1|
 					util.NthBit(p.bg.attrShiftL, 7-p.x)) << 2
 			}
 		}
-		//TODO sprites
-
-		var addr uint16
-		if p.renderingEnabled() {
-			addr = pallete
+		// sprites
+		var spr uint16
+		var priority bool
+		if p.mask.spr && (!p.mask.sprLeft && x < 8) {
+			// https://www.nesdev.org/wiki/PPU_sprite_priority
+			// Sprites with lower OAM indices are drawn in front
+			for i := 7; i < 0; i-- {
+				s := p.spr.primaryOAM[i]
+				if !s.enabled {
+					continue
+				}
+				sprX := x - uint16(s.x)
+				if 8 <= sprX {
+					continue
+				}
+				// TODO flip
+				pallete := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)
+				if pallete == 0 {
+					continue
+				}
+				if s.index == 0 && bg != 0 && x != 255 {
+					p.status.spr0Hit = true
+				}
+				spr = uint16(pallete|(s.attr&0b10)<<2) + 16
+				priority = util.IsSet(s.attr, 0x20)
+			}
 		}
-		p.buf[p.scan.line*256+x] = p.read(addr)
+
+		var pallete uint16
+		if p.renderingEnabled() {
+			switch {
+			case bg == 0 && spr == 0:
+				// default
+			case bg == 0 && 0 < spr:
+				pallete = spr
+			case 0 < bg && spr == 0:
+				pallete = bg
+			case 0 < bg && 0 < spr:
+				if priority {
+					pallete = spr
+				} else {
+					pallete = bg
+				}
+			}
+		}
+		p.buf[p.scan.line*256+x] = p.read(0x3F00 + pallete)
 	}
 
 	// background shift
@@ -280,6 +369,13 @@ func (p *ppu) readStatus() uint8 {
 	return r
 }
 
+func (p *ppu) sprHeight() uint16 {
+	if p.ctrl.spr8x16 {
+		return 16
+	}
+	return 8
+}
+
 func fineY(v uint16) uint16 { return v & 0b111000000000000 >> 12 }
 
 // https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
@@ -288,4 +384,28 @@ func attrAddr(v uint16) uint16 { return 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38
 
 type FrameRenderer interface {
 	UpdateFrame(*[WIDTH * HEIGHT]uint8)
+}
+
+type Sprite struct {
+	enabled bool
+	index   uint8
+
+	x    uint8 // X position of left
+	y    uint8 // Y position of top
+	tile uint8 // tile index number
+	attr uint8 // attribute
+
+	low  uint8
+	high uint8
+}
+
+func (s *Sprite) clear() {
+	s.enabled = false
+	s.index = 0xFF
+	s.x = 0xFF
+	s.y = 0xFF
+	s.tile = 0xFF
+	s.attr = 0xFF
+	s.low = 0
+	s.high = 0
 }

@@ -112,6 +112,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				n++
 				if spriteLimit <= n {
 					p.status.sprOverflow = true
+					break
 				}
 			}
 		case 321:

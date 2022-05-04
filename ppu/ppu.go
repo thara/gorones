@@ -97,7 +97,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				p.status.spr0Hit = false
 			}
 		case 257:
-			for i, n := uint8(0), 0; i < spriteCount || n < spriteLimit; i++ {
+			for i, n := uint8(0), 0; i < spriteCount && n < spriteLimit; i++ {
 				y := p.spr.oam[i*4]
 				row := p.scan.line - uint16(y)
 				if row < 0 || p.sprHeight() <= row {

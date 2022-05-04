@@ -12,7 +12,7 @@ func (p *Port) ReadRegister(addr uint16) uint8 {
 		p.ppu.status.vblank = false
 		p.ppu.w = false
 	case 0x2004: // OAMDATA
-		result = p.ppu.oam[p.ppu.oamAddr]
+		result = p.ppu.spr.oam[p.ppu.oamAddr]
 	case 0x2007:
 		// https://www.nesdev.org/wiki/PPU_registers#The_PPUDATA_read_buffer_(post-fetch)
 		if p.ppu.v <= 0x3EFF {
@@ -44,7 +44,7 @@ func (p *Port) WriteRegister(addr uint16, value uint8) {
 	case 0x2003:
 		p.ppu.oamAddr = value
 	case 0x2004:
-		p.ppu.oam[p.ppu.oamAddr] = value
+		p.ppu.spr.oam[p.ppu.oamAddr] = value
 		p.ppu.oamAddr += 1
 	case 0x2005:
 		// http://wiki.nesdev.org/w/index.php/PPU_scrolling#.242005_first_write_.28w_is_0.29

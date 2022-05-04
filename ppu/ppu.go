@@ -21,7 +21,6 @@ type PPU struct {
 
 	nt       [0x1000]uint8
 	palletes [0x0020]uint8
-	oam      [4 * spriteCount]uint8
 
 	buf [WIDTH * HEIGHT]uint8
 

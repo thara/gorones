@@ -34,7 +34,7 @@ func toNTAddr(addr uint16, m mapper.Mirroring) uint16 {
 	switch m {
 	case mapper.Mirroring_Horizontal:
 		if 0x2800 <= addr {
-			return (0x0800 & addr) % 0x0400
+			return 0x0800 + addr%0x0400
 		} else {
 			return addr % 0x0400
 		}

@@ -58,6 +58,69 @@ func (s *portTestSuite) Test_PPUSTATUS() {
 	s.EqualValues(0b01000000, s.ppu.Port.ReadRegister(addr))
 }
 
+func (s *portTestSuite) Test_OAMADDR() {
+	var addr uint16 = 0x2003
+
+	s.ppu.Port.WriteRegister(addr, 255)
+	s.EqualValues(255, s.ppu.oamAddr)
+}
+
+func (s *portTestSuite) Test_OAMDATA_read() {
+	var addr uint16 = 0x2004
+
+	s.ppu.spr.oam[0x09] = 0xA3
+	s.ppu.Port.WriteRegister(0x2003, 0x09)
+
+	s.EqualValues(0xA3, s.ppu.Port.ReadRegister(addr))
+}
+
+func (s *portTestSuite) Test_OAMDATA_write() {
+	var addr uint16 = 0x2004
+
+	s.ppu.Port.WriteRegister(0x2003, 0xAB)
+	s.ppu.Port.WriteRegister(addr, 0x32)
+
+	s.EqualValues(0x32, s.ppu.spr.oam[0xAB])
+}
+
+func (s *portTestSuite) Test_PPUSCROLL() {
+	var addr uint16 = 0x2005
+
+	s.ppu.Port.WriteRegister(addr, 0x1F)
+
+	s.True(s.ppu.w)
+	s.EqualValues(3, coarseX(s.ppu.t))
+	s.EqualValues(0b111, s.ppu.x)
+
+	s.ppu.Port.WriteRegister(addr, 0x0E)
+	s.False(s.ppu.w)
+	s.EqualValues(1, coarseY(s.ppu.t))
+}
+
+func (s *portTestSuite) Test_PPUADDR() {
+	var addr uint16 = 0x2006
+
+	s.ppu.Port.WriteRegister(addr, 0x3F)
+	s.True(s.ppu.w)
+
+	s.ppu.Port.WriteRegister(addr, 0x91)
+	s.False(s.ppu.w)
+
+	s.EqualValues(0x3F91, s.ppu.v)
+	s.EqualValues(0x3F91, s.ppu.t)
+}
+
+func (s *portTestSuite) Test_PPUDATA() {
+	var addr uint16 = 0x2007
+
+	s.ppu.Port.WriteRegister(0x2006, 0x2F)
+	s.ppu.Port.WriteRegister(0x2006, 0x11)
+
+	s.ppu.Port.WriteRegister(addr, 0x83)
+
+	s.EqualValues(0x83, s.ppu.read(0x2F11))
+}
+
 func Test_status(t *testing.T) {
 	suite.Run(t, new(portTestSuite))
 }

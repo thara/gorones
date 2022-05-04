@@ -83,7 +83,7 @@ func (p *Port) WriteRegister(addr uint16, value uint8) {
 			// t: .FEDCBA ........ = d: ..FEDCBA
 			// t: X...... ........ = 0
 			p.ppu.t &^= 0b011111100000000
-			p.ppu.t |= (d & 0b11111) << 8
+			p.ppu.t |= (d & 0b111111) << 8
 		} else {
 			// second write
 			// t: ....... HGFEDCBA = d: HGFEDCBA

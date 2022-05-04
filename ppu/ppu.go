@@ -123,7 +123,13 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				} else {
 					addr = uint16(util.Bit(p.ctrl.sprTable))*0x1000 + uint16(p.spr.primaryOAM[i].tile)*16
 				}
-				//TODO flip vertical
+
+				y := p.scan.line - uint16(p.spr.primaryOAM[i].y)%uint16(p.sprHeight())
+				if 0 < p.spr.primaryOAM[i].attr&0x80 {
+					y ^= p.sprHeight() - 1 // vertical flip
+				}
+				addr += y + (y & 8) // second tile on 8x16
+
 				p.spr.primaryOAM[i].low = p.read(addr)
 				p.spr.primaryOAM[i].high = p.read(addr + 8)
 			}
@@ -133,6 +139,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 		case 2 <= p.scan.dot && p.scan.dot <= 255:
 			fallthrough
 		case 322 <= p.scan.dot && p.scan.dot <= 337:
+			p.pixel()
 			// https://wiki.nesdev.org/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
 			switch p.scan.dot % 8 {
 			// name table
@@ -146,7 +153,12 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				p.bg.addr = attrAddr(p.ppu.v)
 			case 4:
 				p.bg.at = p.read(p.bg.addr)
-				//TODO select area
+				if 0 < coarseY(p.v)&0b10 {
+					p.bg.at <<= 4
+				}
+				if 0 < coarseX(p.v)&0b10 {
+					p.bg.at <<= 2
+				}
 			// bg (low)
 			case 5:
 				var base uint16
@@ -162,16 +174,26 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				p.bg.addr += tileHeight
 			case 0:
 				p.bg.high = uint16(p.read(p.bg.addr))
-				//TODO incr coarse X
+				if p.renderingEnabled() {
+					p.incrCoarseX()
+				}
 			}
 		case p.scan.dot == 256:
+			p.pixel()
 			p.bg.high = uint16(p.read(p.bg.addr))
-			//TODO incr coarse Y
+			if p.renderingEnabled() {
+				p.incrY()
+			}
 		case p.scan.dot == 257:
+			p.pixel()
 			p.shiftReload()
-			//TODO copy X
+			if p.renderingEnabled() {
+				p.copyX()
+			}
 		case 280 <= p.scan.dot && p.scan.dot <= 304 && pre:
-			//TODO copy Y
+			if p.renderingEnabled() {
+				p.copyY()
+			}
 
 		// no shift reloading
 		case p.scan.dot == 1:
@@ -246,7 +268,9 @@ func (p *PPU) pixel() {
 				if 8 <= sprX {
 					continue
 				}
-				// TODO flip
+				if 0 < p.spr.primaryOAM[i].attr&0x40 {
+					sprX ^= 7 // horizontal flip
+				}
 				pallete := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)
 				if pallete == 0 {
 					continue
@@ -317,6 +341,9 @@ type ppu struct {
 		sprLeft bool
 		bg      bool
 		spr     bool
+		red     bool
+		green   bool
+		blue    bool
 	}
 	// PPUSTATUS
 	status struct {
@@ -353,6 +380,9 @@ func (p *ppu) setMask(v uint8) {
 	p.mask.sprLeft = uint8(v)&0b00000100 == 0b00000100
 	p.mask.bg = uint8(v)&0b00001000 == 0b00001000
 	p.mask.spr = uint8(v)&0b00010000 == 0b00010000
+	p.mask.red = uint8(v)&0b00100000 == 0b00100000
+	p.mask.green = uint8(v)&0b01000000 == 0b01000000
+	p.mask.blue = uint8(v)&0b10000000 == 0b10000000
 }
 
 func (p *ppu) readStatus() uint8 {
@@ -360,10 +390,10 @@ func (p *ppu) readStatus() uint8 {
 	if p.status.sprOverflow {
 		r |= 0b00100000
 	}
-	if p.status.sprOverflow {
+	if p.status.spr0Hit {
 		r |= 0b01000000
 	}
-	if p.status.sprOverflow {
+	if p.status.vblank {
 		r |= 0b10000000
 	}
 	return r
@@ -376,7 +406,57 @@ func (p *ppu) sprHeight() uint16 {
 	return 8
 }
 
-func fineY(v uint16) uint16 { return v & 0b111000000000000 >> 12 }
+/// https://wiki.nesdev.com/w/index.php/PPU_scrolling#PPU_internal_registers
+///
+/// yyy NN YYYYY XXXXX
+/// ||| || ||||| +++++-- coarse X scroll
+/// ||| || +++++-------- coarse Y scroll
+/// ||| ++-------------- nametable select
+/// +++----------------- fine Y scroll
+
+func coarseX(v uint16) uint16 { return v & 0b11111 }
+func coarseY(v uint16) uint16 { return v & 0b1111100000 >> 5 }
+func fineY(v uint16) uint16   { return v & 0b111000000000000 >> 12 }
+
+func (p *ppu) incrCoarseX() {
+	if coarseX(p.v) == 31 {
+		p.v = ^uint16(31) // coarse X = 0
+		p.v ^= 0x0400     // switch horizontal nametable
+	} else {
+		p.v++
+	}
+}
+
+func (p *ppu) incrY() {
+	// http://wiki.nesdev.com/w/index.php/PPU_scrolling#Y_increment
+	if fineY(p.v) < 7 {
+		p.v += 0x1000
+	} else {
+		p.v = ^uint16(0x7000) // fine Y = 0
+		y := coarseY(p.v)
+		if y == 29 {
+			y = 0
+			p.v ^= 0x0800 // switch vertical nametable
+		} else if y == 31 {
+			y = 0
+		} else {
+			y++
+		}
+		p.v = (p.v &^ 0x03E0) | (y << 5)
+	}
+}
+
+func (p *ppu) copyX() {
+	// http://wiki.nesdev.com/w/index.php/PPU_scrolling#At_dot_257_of_each_scanline
+	// v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
+	p.v = (p.v &^ 0b100_00011111) | (p.t & 0b100_00011111)
+}
+
+func (p *ppu) copyY() {
+	// http://wiki.nesdev.com/w/index.php/PPU_scrolling#During_dots_280_to_304_of_the_pre-render_scanline_.28end_of_vblank.29
+	// v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
+	p.v = (p.v &^ 0b1111011_11100000) | (p.t & 0b1111011_11100000)
+}
 
 // https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
 func tileAddr(v uint16) uint16 { return 0x2000 | (uint16(v) & 0x0FFF) }

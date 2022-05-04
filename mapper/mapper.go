@@ -15,6 +15,9 @@ type Mapper interface {
 	Write(addr uint16, value uint8)
 
 	Mirroring() Mirroring
+
+	PRG() []byte
+	CHR() []byte
 }
 
 // Mapper creates a mapper object from this rom's data
@@ -80,3 +83,6 @@ func (m *mapper0) Mirroring() Mirroring {
 		return Mirroring_Horizontal
 	}
 }
+
+func (m *mapper0) PRG() []byte { return append([]byte(nil), m.prg...) }
+func (m *mapper0) CHR() []byte { return append([]byte(nil), m.chr...) }

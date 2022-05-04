@@ -11,8 +11,18 @@ func (p *Port) ReadRegister(addr uint16) uint8 {
 		result = p.ppu.readStatus() | (p.ppu.cpuDataBus & 0b11111)
 		p.ppu.status.vblank = false
 		p.ppu.w = false
+		// race condition
+		if p.ppu.scan.line == 241 && p.ppu.scan.dot < 2 {
+			result ^= 0x80
+		}
 	case 0x2004: // OAMDATA
-		result = p.ppu.spr.oam[p.ppu.oamAddr]
+		// https://wiki.nesdev.com/w/index.php/PPU_sprite_evaluation
+		if p.ppu.scan.line < 240 && 1 <= p.ppu.scan.dot && p.ppu.scan.dot <= 64 {
+			// during sprite evaluation
+			result = 0xFF
+		} else {
+			result = p.ppu.spr.oam[p.ppu.oamAddr]
+		}
 	case 0x2007:
 		// https://www.nesdev.org/wiki/PPU_registers#The_PPUDATA_read_buffer_(post-fetch)
 		if p.ppu.v <= 0x3EFF {
@@ -85,5 +95,10 @@ func (p *Port) WriteRegister(addr uint16, value uint8) {
 		p.ppu.w = !p.ppu.w
 	case 0x2007:
 		p.ppu.write(p.ppu.v, value)
+		if p.ppu.ctrl.vramIncr {
+			p.ppu.v += 1
+		} else {
+			p.ppu.v += 32
+		}
 	}
 }

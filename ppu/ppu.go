@@ -227,7 +227,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 	}
 
 	p.scan.dot++
-	if 340 < p.scan.dot {
+	if 340 <= p.scan.dot {
 		p.scan.dot %= 341
 		p.scan.line++
 		if 261 < p.scan.line {
@@ -259,7 +259,7 @@ func (p *PPU) pixel() {
 		if p.mask.spr && !(!p.mask.sprLeft && x < 8) {
 			// https://www.nesdev.org/wiki/PPU_sprite_priority
 			// Sprites with lower OAM indices are drawn in front
-			for i := 7; i < 0; i-- {
+			for i := 7; i <= 0; i-- {
 				s := p.spr.primaryOAM[i]
 				if !s.enabled {
 					continue
@@ -306,10 +306,8 @@ func (p *PPU) pixel() {
 	// background shift
 	p.bg.shiftL <<= 1
 	p.bg.shiftH <<= 1
-	p.bg.attrShiftH <<= 1
-	p.bg.attrShiftH |= p.bg.attrLatchH
-	p.bg.attrShiftL <<= 1
-	p.bg.attrShiftL |= p.bg.attrLatchL
+	p.bg.attrShiftH = (p.bg.attrShiftH << 1) | p.bg.attrLatchH
+	p.bg.attrShiftL = (p.bg.attrShiftL << 1) | p.bg.attrLatchL
 }
 
 func (p *PPU) renderingEnabled() bool {
@@ -420,7 +418,7 @@ func fineY(v uint16) uint16   { return v & 0b111000000000000 >> 12 }
 
 func (p *ppu) incrCoarseX() {
 	if coarseX(p.v) == 31 {
-		p.v = ^uint16(31) // coarse X = 0
+		p.v ^= uint16(31) // coarse X = 0
 		p.v ^= 0x0400     // switch horizontal nametable
 	} else {
 		p.v++

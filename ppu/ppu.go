@@ -245,7 +245,7 @@ func (p *PPU) pixel() {
 	// visible
 	if p.scan.line < 240 && 0 <= x && x < 256 {
 		// background
-		if p.mask.bg && (!p.mask.bgLeft && x < 8) {
+		if p.mask.bg && !(!p.mask.bgLeft && x < 8) {
 			bg = util.NthBit(p.bg.shiftH, 15-p.x)<<1 |
 				util.NthBit(p.bg.shiftL, 15-p.x)
 			if 0 < bg {
@@ -256,7 +256,7 @@ func (p *PPU) pixel() {
 		// sprites
 		var spr uint16
 		var priority bool
-		if p.mask.spr && (!p.mask.sprLeft && x < 8) {
+		if p.mask.spr && !(!p.mask.sprLeft && x < 8) {
 			// https://www.nesdev.org/wiki/PPU_sprite_priority
 			// Sprites with lower OAM indices are drawn in front
 			for i := 7; i < 0; i-- {
@@ -459,7 +459,7 @@ func (p *ppu) copyY() {
 }
 
 // https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
-func tileAddr(v uint16) uint16 { return 0x2000 | (uint16(v) & 0x0FFF) }
+func tileAddr(v uint16) uint16 { return 0x2000 | (v & 0x0FFF) }
 func attrAddr(v uint16) uint16 { return 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07) }
 
 type FrameRenderer interface {

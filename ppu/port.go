@@ -32,9 +32,9 @@ func (p *Port) ReadRegister(addr uint16) uint8 {
 			result = p.ppu.read(p.ppu.v)
 		}
 		if p.ppu.ctrl.vramIncr {
-			p.ppu.v += 1
-		} else {
 			p.ppu.v += 32
+		} else {
+			p.ppu.v += 1
 		}
 	default:
 		result = p.ppu.cpuDataBus
@@ -55,7 +55,7 @@ func (p *Port) WriteRegister(addr uint16, value uint8) {
 		p.ppu.oamAddr = value
 	case 0x2004:
 		p.ppu.spr.oam[p.ppu.oamAddr] = value
-		p.ppu.oamAddr += 1
+		p.ppu.oamAddr++
 	case 0x2005:
 		// http://wiki.nesdev.org/w/index.php/PPU_scrolling#.242005_first_write_.28w_is_0.29
 		// http://wiki.nesdev.org/w/index.php/PPU_scrolling#.242005_second_write_.28w_is_1.29
@@ -96,9 +96,9 @@ func (p *Port) WriteRegister(addr uint16, value uint8) {
 	case 0x2007:
 		p.ppu.write(p.ppu.v, value)
 		if p.ppu.ctrl.vramIncr {
-			p.ppu.v += 1
-		} else {
 			p.ppu.v += 32
+		} else {
+			p.ppu.v += 1
 		}
 	}
 }

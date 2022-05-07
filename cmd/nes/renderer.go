@@ -1,10 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"log"
-
 	"github.com/thara/gorones/ppu"
 )
 
@@ -20,10 +16,10 @@ func newRenderer() *renderer {
 
 func (r *renderer) UpdateFrame(buf *[ppu.WIDTH * ppu.HEIGHT]uint8) {
 	for i, v := range buf {
-		r.px[i*4] = palettes[v]
-		r.px[i*4+1] = palettes[v+1]
-		r.px[i*4+2] = palettes[v+2]
-		r.px[i*4+3] = palettes[v+3]
+		r.px[i*4] = byte(palette[v] >> 24 & 0xFF)
+		r.px[i*4+1] = byte(palette[v] >> 16 & 0xFF)
+		r.px[i*4+2] = byte(palette[v] >> 8 & 0xFF)
+		r.px[i*4+3] = byte(palette[v] & 0xFF)
 	}
 }
 
@@ -31,15 +27,7 @@ func (r *renderer) pixels() []byte {
 	return r.px
 }
 
-var palettes []byte = func() []byte {
-	var bf bytes.Buffer
-	if err := binary.Write(&bf, binary.BigEndian, rgba); err != nil {
-		log.Fatalf("fail to write video buffer: %v", err)
-	}
-	return bf.Bytes()
-}()
-
-var rgba []uint32 = []uint32{
+var palette []uint32 = []uint32{
 	0x7C7C7CFF, 0x0000FCFF, 0x0000BCFF, 0x4428BCFF, 0x940084FF, 0xA80020FF, 0xA81000FF, 0x881400FF,
 	0x503000FF, 0x007800FF, 0x006800FF, 0x005800FF, 0x004058FF, 0x000000FF, 0x000000FF, 0x000000FF,
 	0xBCBCBCFF, 0x0078F8FF, 0x0058F8FF, 0x6844FCFF, 0xD800CCFF, 0xE40058FF, 0xF83800FF, 0xE45C10FF,

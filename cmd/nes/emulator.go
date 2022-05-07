@@ -45,6 +45,12 @@ func newEmulator(path string) (*Emulator, error) {
 	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer)
 	emu.nes.PowerOn()
 
+	if nestest {
+		emu.nes.InitNEStest()
+	} else {
+		emu.nes.Reset()
+	}
+
 	return &emu, nil
 }
 

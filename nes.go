@@ -32,6 +32,17 @@ func (n *NES) PowerOn() {
 	n.cpu.PowerOn()
 }
 
+func (n *NES) Reset() {
+	n.cpu.Reset()
+}
+
+func (n *NES) InitNEStest() {
+	n.cpu.PC = 0xC000
+	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state#cite_ref-1
+	n.cpu.P.Set(0x24)
+	n.cpu.Cycles = 7
+}
+
 func (n *NES) RunFrame() {
 	for i := 0; i < cpuCyclesPerFrame; i++ {
 		n.step()

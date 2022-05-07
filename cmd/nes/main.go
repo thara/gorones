@@ -10,6 +10,12 @@ import (
 	"github.com/thara/gorones/ppu"
 )
 
+var nestest bool
+
+func init() {
+	flag.BoolVar(&nestest, "nestest", false, "init for nestest")
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [OPTIONS] ROM\n", os.Args[0])

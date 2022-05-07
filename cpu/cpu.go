@@ -59,3 +59,9 @@ func (c *CPU) fetch() uint8 {
 	c.PC += 1
 	return op
 }
+
+func (c *CPU) Reset() {
+	c.PC = c.readWord(0xFFFC)
+	c.P.Set(uint8(status_I))
+	c.S -= 3
+}

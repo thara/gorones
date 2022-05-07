@@ -57,7 +57,7 @@ type PPU struct {
 
 	renderer FrameRenderer
 
-	frameOdd bool
+	frames uint64
 }
 
 func New(mapper mapper.Mapper, renderer FrameRenderer) *PPU {
@@ -68,6 +68,10 @@ func New(mapper mapper.Mapper, renderer FrameRenderer) *PPU {
 	}
 	ppu.Port = Port{ppu: ppu}
 	return ppu
+}
+
+func (p *PPU) CurrentFrames() uint64 {
+	return p.frames
 }
 
 func (p *PPU) Step(intr *cpu.Interrupt) {
@@ -209,7 +213,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			p.bg.nt = p.read(p.bg.addr)
 		case p.scan.dot == 340:
 			p.bg.nt = p.read(p.bg.addr)
-			if pre && (p.mask.bg || p.mask.spr) && p.frameOdd {
+			if pre && (p.mask.bg || p.mask.spr) && p.frames%2 != 0 {
 				p.scan.dot += 1 // skip 0 cycle on visible frame
 			}
 		}
@@ -228,11 +232,11 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 
 	p.scan.dot++
 	if 340 <= p.scan.dot {
-		p.scan.dot %= 341
+		p.scan.dot %= 340
 		p.scan.line++
 		if 261 < p.scan.line {
 			p.scan.line = 0
-			p.frameOdd = !p.frameOdd
+			p.frames++
 		}
 	}
 }

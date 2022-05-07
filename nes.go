@@ -12,6 +12,7 @@ const cpuCyclesPerFrame = 29781
 // NES components
 type NES struct {
 	cpu *cpu.CPU
+	ppu *ppu.PPU
 
 	interrupt *cpu.Interrupt
 }
@@ -24,6 +25,7 @@ func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, renderer ppu.FrameRe
 	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	return &NES{
 		cpu:       cpu.New(&t, &ctx),
+		ppu:       ppu,
 		interrupt: &intr,
 	}
 }
@@ -44,7 +46,8 @@ func (n *NES) InitNEStest() {
 }
 
 func (n *NES) RunFrame() {
-	for i := 0; i < cpuCyclesPerFrame; i++ {
+	before := n.ppu.CurrentFrames()
+	for before == n.ppu.CurrentFrames() {
 		n.step()
 	}
 }

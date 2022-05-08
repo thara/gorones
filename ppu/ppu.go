@@ -214,7 +214,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			p.bg.nt = p.read(p.bg.addr)
 		case p.scan.dot == 340:
 			p.bg.nt = p.read(p.bg.addr)
-			if pre && (p.mask.bg || p.mask.spr) && p.frames%2 != 0 {
+			if pre && p.renderingEnabled() && p.frames%2 != 0 {
 				p.scan.dot += 1 // skip 0 cycle on visible frame
 			}
 		}

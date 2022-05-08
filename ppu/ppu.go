@@ -171,7 +171,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 					base += 0x1000
 				}
 				index := uint16(p.bg.nt) * tileHeight * 2
-				p.bg.addr = base + index + fineY(p.bg.addr)
+				p.bg.addr = base + index + fineY(p.v)
 			case 6:
 				p.bg.low = uint16(p.read(p.bg.addr))
 			// bg (high)

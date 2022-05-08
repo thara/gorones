@@ -325,8 +325,8 @@ func (p *PPU) bgShift() {
 func (p *PPU) bgShiftReload() {
 	p.bg.shiftL = (p.bg.shiftL & 0xFF00) | p.bg.low
 	p.bg.shiftH = (p.bg.shiftH & 0xFF00) | p.bg.high
-	p.bg.attrLatchH = p.bg.at & 1
-	p.bg.attrLatchL = p.bg.at & 2
+	p.bg.attrLatchL = util.Bit(0 < p.bg.at&1)
+	p.bg.attrLatchH = util.Bit(0 < p.bg.at&2)
 }
 
 type ppu struct {

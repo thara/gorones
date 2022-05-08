@@ -264,7 +264,7 @@ func (p *PPU) pixel() {
 		if p.mask.spr && !(!p.mask.sprLeft && x < 8) {
 			// https://www.nesdev.org/wiki/PPU_sprite_priority
 			// Sprites with lower OAM indices are drawn in front
-			for i := 7; i <= 0; i-- {
+			for i := 7; 0 <= i; i-- {
 				s := p.spr.primaryOAM[i]
 				if !s.enabled {
 					continue

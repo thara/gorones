@@ -1,5 +1,7 @@
 package cpu
 
+import "fmt"
+
 // Trace is a snapshot of CPU state
 type Trace struct {
 	cpu
@@ -45,4 +47,29 @@ func (m addressingMode) instructionLength() uint8 {
 		return 3
 	}
 	return 1
+}
+
+func (t Trace) String() string {
+	len := t.AddressingMode.instructionLength()
+	var op string
+	switch len {
+	case 1:
+		op = fmt.Sprintf("%02X      ", t.Opcode)
+	case 2:
+		op = fmt.Sprintf("%02X %02X   ", t.Opcode, t.Operand1)
+	case 3:
+		op = fmt.Sprintf("%02X %02X %02X", t.Opcode, t.Operand1, t.Operand2)
+	default:
+		panic("illegal addressing mode")
+	}
+	return fmt.Sprintf(
+		"%04X  %s  A:%02X X:%02X Y:%02X P:%02X SP:%02X",
+		t.PC,
+		op,
+		t.A,
+		t.X,
+		t.Y,
+		t.P.u8(),
+		t.S,
+	)
 }

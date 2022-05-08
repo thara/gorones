@@ -464,7 +464,13 @@ func (p *ppu) copyY() {
 	p.v = (p.v &^ 0b1111011_11100000) | (p.t & 0b1111011_11100000)
 }
 
-// https://www.nesdev.org/wiki/PPU_pattern_tables#Addressing
+// https://www.nesdev.org/wiki/PPU_scrolling#Tile_and_attribute_fetching
+//
+// NN 1111 YYY XXX
+// || |||| ||| +++-- high 3 bits of coarse X (x/4)
+// || |||| +++------ high 3 bits of coarse Y (y/4)
+// || ++++---------- attribute offset (960 bytes)
+// ++--------------- nametable select
 func tileAddr(v uint16) uint16 { return 0x2000 | (v & 0x0FFF) }
 func attrAddr(v uint16) uint16 { return 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07) }
 

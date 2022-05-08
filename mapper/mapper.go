@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +35,8 @@ type mapper0 struct {
 	prg []byte
 	chr []byte
 
-	mirrored bool
+	mirroring Mirroring
+	mirrored  bool
 }
 
 func newMapper0(rom *ROM) Mapper {
@@ -48,9 +51,10 @@ func newMapper0(rom *ROM) Mapper {
 		chr = rom.raw[prgSize : prgSize+chrSize]
 	}
 	return &mapper0{
-		prg:      prg,
-		chr:      chr,
-		mirrored: prgSize == 0x4000,
+		prg:       prg,
+		chr:       chr,
+		mirroring: rom.header.mirroring,
+		mirrored:  prgSize == 0x4000,
 	}
 }
 
@@ -77,12 +81,17 @@ func (m *mapper0) Write(addr uint16, value uint8) {
 }
 
 func (m *mapper0) Mirroring() Mirroring {
-	if m.mirrored {
-		return Mirroring_Vertical
-	} else {
-		return Mirroring_Horizontal
-	}
+	return m.mirroring
 }
 
 func (m *mapper0) PRG() []byte { return append([]byte(nil), m.prg...) }
 func (m *mapper0) CHR() []byte { return append([]byte(nil), m.chr...) }
+
+func (m mapper0) String() string {
+	return fmt.Sprintf(`mapper 0:
+	PRG: 0x%x byte
+	CHR: 0x%x byte
+	mirroring: %s
+	mirrored: %t
+`, len(m.prg), len(m.chr), m.mirroring, m.mirrored)
+}

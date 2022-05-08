@@ -23,6 +23,16 @@ const (
 	Mirroring_Vertical
 )
 
+func (m Mirroring) String() string {
+	switch m {
+	case Mirroring_Horizontal:
+		return "H"
+	case Mirroring_Vertical:
+		return "V"
+	}
+	return "Unknown"
+}
+
 type header struct {
 	mapperNO   uint8
 	prgROMSize uint

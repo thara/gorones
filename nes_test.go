@@ -43,11 +43,7 @@ func Test_nestest(t *testing.T) {
 		interrupt: &intr,
 	}
 	nes.PowerOn()
-
-	nes.cpu.PC = 0xC000
-	// https://wiki.nesdev.com/w/index.php/CPU_power_up_state#cite_ref-1
-	nes.cpu.P.Set(0x24)
-	nes.cpu.Cycles = 7
+	nes.InitNEStest()
 
 	f, err = os.Open("testdata/nestest.log")
 	require.NoError(t, err)

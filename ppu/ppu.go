@@ -426,9 +426,10 @@ func nameTableSelect(v uint16) uint16 { return (v & 0b000110000000000) >> 10 }
 func fineY(v uint16) uint16           { return (v & 0b111000000000000) >> 12 }
 
 func (p *ppu) incrCoarseX() {
+	// http://wiki.nesdev.com/w/index.php/PPU_scrolling#Coarse_X_increment
 	if coarseX(p.v) == 31 {
-		p.v ^= uint16(31) // coarse X = 0
-		p.v ^= 0x0400     // switch horizontal nametable
+		p.v &= ^uint16(0x001F) // coarse X = 0
+		p.v ^= 0x0400          // switch horizontal nametable
 	} else {
 		p.v++
 	}
@@ -439,7 +440,7 @@ func (p *ppu) incrY() {
 	if fineY(p.v) < 7 {
 		p.v += 0x1000
 	} else {
-		p.v = ^uint16(0x7000) // fine Y = 0
+		p.v &= ^uint16(0x7000) // fine Y = 0
 		y := coarseY(p.v)
 		if y == 29 {
 			y = 0

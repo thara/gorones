@@ -33,6 +33,7 @@ func newEmulator(path string) (*Emulator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get mapper %s: %v", path, err)
 	}
+	fmt.Println(m)
 
 	ctrl1 := newKbStdCtrl()
 	ctrl2 := newKbStdCtrl()
@@ -46,8 +47,10 @@ func newEmulator(path string) (*Emulator, error) {
 	emu.nes.PowerOn()
 
 	if nestest {
+		fmt.Println("init for nestest")
 		emu.nes.InitNEStest()
 	} else {
+		fmt.Println("reset")
 		emu.nes.Reset()
 	}
 

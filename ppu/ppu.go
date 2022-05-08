@@ -100,14 +100,15 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				p.status.spr0Hit = false
 			}
 		case 257:
-			for i, n := uint8(0), 0; i < spriteCount && n < spriteLimit; i++ {
+			var n uint8
+			for i := 0; i < spriteCount; i++ {
 				y := p.spr.oam[i*4]
 				row := p.scan.line - uint16(y)
 				if row < 0 || p.sprHeight() <= row {
 					continue
 				}
 				p.spr.secondaryOAM[n].enabled = true
-				p.spr.secondaryOAM[n].index = i
+				p.spr.secondaryOAM[n].index = uint8(i)
 				p.spr.secondaryOAM[n].y = y
 				p.spr.secondaryOAM[n].tile = p.spr.oam[i*4+1]
 				p.spr.secondaryOAM[n].attr = p.spr.oam[i*4+2]

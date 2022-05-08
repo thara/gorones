@@ -420,9 +420,10 @@ func (p *ppu) sprHeight() uint16 {
 /// ||| ++-------------- nametable select
 /// +++----------------- fine Y scroll
 
-func coarseX(v uint16) uint16 { return v & 0b11111 }
-func coarseY(v uint16) uint16 { return v & 0b1111100000 >> 5 }
-func fineY(v uint16) uint16   { return v & 0b111000000000000 >> 12 }
+func coarseX(v uint16) uint16         { return (v & 0b000000000011111) }
+func coarseY(v uint16) uint16         { return (v & 0b000001111100000) >> 5 }
+func nameTableSelect(v uint16) uint16 { return (v & 0b000110000000000) >> 10 }
+func fineY(v uint16) uint16           { return (v & 0b111000000000000) >> 12 }
 
 func (p *ppu) incrCoarseX() {
 	if coarseX(p.v) == 31 {

@@ -288,24 +288,24 @@ func (p *PPU) pixel() {
 			}
 		}
 
-		var pallete uint16
+		var palette uint8
 		if p.renderingEnabled() {
 			switch {
 			case bg == 0 && spr == 0:
 				// default
 			case bg == 0 && 0 < spr:
-				pallete = spr
+				palette = spr
 			case 0 < bg && spr == 0:
-				pallete = bg
+				palette = bg
 			case 0 < bg && 0 < spr:
 				if priority {
-					pallete = spr
+					palette = spr
 				} else {
-					pallete = bg
+					palette = bg
 				}
 			}
 		}
-		p.buf[p.scan.line*256+x] = p.read(0x3F00 + pallete)
+		p.buf[p.scan.line*256+x] = p.read(0x3F00 + uint16(palette))
 	}
 
 	p.bgShift()

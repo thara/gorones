@@ -150,7 +150,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			// name table
 			case 1:
 				p.bg.addr = tileAddr(p.ppu.v)
-				p.shiftReload()
+				p.bgShiftReload()
 			case 2:
 				p.bg.nt = p.read(p.bg.addr)
 			// attribute
@@ -191,7 +191,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			}
 		case p.scan.dot == 257:
 			p.pixel()
-			p.shiftReload()
+			p.bgShiftReload()
 			if p.renderingEnabled() {
 				p.copyX()
 			}
@@ -308,18 +308,21 @@ func (p *PPU) pixel() {
 		p.buf[p.scan.line*256+x] = p.read(0x3F00 + pallete)
 	}
 
-	// background shift
-	p.bg.shiftL <<= 1
-	p.bg.shiftH <<= 1
-	p.bg.attrShiftH = (p.bg.attrShiftH << 1) | p.bg.attrLatchH
-	p.bg.attrShiftL = (p.bg.attrShiftL << 1) | p.bg.attrLatchL
+	p.bgShift()
 }
 
 func (p *PPU) renderingEnabled() bool {
 	return p.mask.bg || p.mask.spr
 }
 
-func (p *PPU) shiftReload() {
+func (p *PPU) bgShift() {
+	p.bg.shiftL <<= 1
+	p.bg.shiftH <<= 1
+	p.bg.attrShiftH = (p.bg.attrShiftH << 1) | p.bg.attrLatchH
+	p.bg.attrShiftL = (p.bg.attrShiftL << 1) | p.bg.attrLatchL
+}
+
+func (p *PPU) bgShiftReload() {
 	p.bg.shiftL = (p.bg.shiftL & 0xFF00) | p.bg.low
 	p.bg.shiftH = (p.bg.shiftH & 0xFF00) | p.bg.high
 	p.bg.attrLatchH = p.bg.at & 1

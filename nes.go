@@ -7,8 +7,6 @@ import (
 	"github.com/thara/gorones/ppu"
 )
 
-const cpuCyclesPerFrame = 29781
-
 // NES components
 type NES struct {
 	cpu *cpu.CPU

@@ -245,21 +245,20 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 func (p *PPU) pixel() {
 	x := p.scan.dot - pixelDelayed
 
-	var bg uint16
+	var bg uint8
 
 	// visible
 	if p.scan.line < 240 && 0 <= x && x < 256 {
 		// background
 		if p.mask.bg && !(!p.mask.bgLeft && x < 8) {
-			bg = util.NthBit(p.bg.shiftH, 15-p.x)<<1 |
-				util.NthBit(p.bg.shiftL, 15-p.x)
+			bg = nth(p.bg.shiftH, 15-p.x)<<1 | nth(p.bg.shiftL, 15-p.x)
 			if 0 < bg {
-				bg |= uint16(util.NthBit(p.bg.attrShiftH, 7-p.x)<<1|
-					util.NthBit(p.bg.attrShiftL, 7-p.x)) << 2
+				bg |= (nth(p.bg.attrShiftH, 7-p.x)<<1 |
+					nth(p.bg.attrShiftL, 7-p.x)) << 2
 			}
 		}
 		// sprites
-		var spr uint16
+		var spr uint8
 		var priority bool
 		if p.mask.spr && !(!p.mask.sprLeft && x < 8) {
 			// https://www.nesdev.org/wiki/PPU_sprite_priority
@@ -276,15 +275,15 @@ func (p *PPU) pixel() {
 				if 0 < p.spr.primaryOAM[i].attr&0x40 {
 					sprX ^= 7 // horizontal flip
 				}
-				pallete := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)
-				if pallete == 0 {
+				palette := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)
+				if palette == 0 {
 					continue
 				}
 				if s.index == 0 && bg != 0 && x != 255 {
 					p.status.spr0Hit = true
 				}
-				spr = uint16(pallete|(s.attr&0b10)<<2) + 16
-				priority = util.IsSet(s.attr, 0x20)
+				spr = (palette | (s.attr&0b11)<<2) + 0x10
+				priority = util.IsSet(s.attr, 5)
 			}
 		}
 

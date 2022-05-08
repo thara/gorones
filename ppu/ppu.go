@@ -159,10 +159,10 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			case 4:
 				p.bg.at = p.read(p.bg.addr)
 				if 0 < coarseY(p.v)&0b10 {
-					p.bg.at <<= 4
+					p.bg.at >>= 4
 				}
 				if 0 < coarseX(p.v)&0b10 {
-					p.bg.at <<= 2
+					p.bg.at >>= 2
 				}
 			// bg (low)
 			case 5:

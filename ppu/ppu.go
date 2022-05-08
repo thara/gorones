@@ -372,23 +372,23 @@ type ppu struct {
 
 func (p *ppu) setController(v uint8) {
 	p.ctrl.nt = v & 0b00000011
-	p.ctrl.vramIncr = v&0b00000100 == 0b00000100
-	p.ctrl.sprTable = v&0b00001000 == 0b00001000
-	p.ctrl.bgTable = v&0b00010000 == 0b00010000
-	p.ctrl.spr8x16 = v&0b00100000 == 0b00100000
-	p.ctrl.slave = v&0b01000000 == 0b01000000
-	p.ctrl.nmi = v&0b10000000 == 0b10000000
+	p.ctrl.vramIncr = util.IsSet(v, 2)
+	p.ctrl.sprTable = util.IsSet(v, 3)
+	p.ctrl.bgTable = util.IsSet(v, 4)
+	p.ctrl.spr8x16 = util.IsSet(v, 5)
+	p.ctrl.slave = util.IsSet(v, 6)
+	p.ctrl.nmi = util.IsSet(v, 7)
 }
 
 func (p *ppu) setMask(v uint8) {
-	p.mask.gray = uint8(v)&0b00000001 == 0b00000001
-	p.mask.bgLeft = uint8(v)&0b00000010 == 0b00000010
-	p.mask.sprLeft = uint8(v)&0b00000100 == 0b00000100
-	p.mask.bg = uint8(v)&0b00001000 == 0b00001000
-	p.mask.spr = uint8(v)&0b00010000 == 0b00010000
-	p.mask.red = uint8(v)&0b00100000 == 0b00100000
-	p.mask.green = uint8(v)&0b01000000 == 0b01000000
-	p.mask.blue = uint8(v)&0b10000000 == 0b10000000
+	p.mask.gray = util.IsSet(v, 0)
+	p.mask.bgLeft = util.IsSet(v, 1)
+	p.mask.sprLeft = util.IsSet(v, 2)
+	p.mask.bg = util.IsSet(v, 3)
+	p.mask.spr = util.IsSet(v, 4)
+	p.mask.red = util.IsSet(v, 5)
+	p.mask.green = util.IsSet(v, 6)
+	p.mask.blue = util.IsSet(v, 7)
 }
 
 func (p *ppu) readStatus() uint8 {

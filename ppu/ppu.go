@@ -79,11 +79,12 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 
 	switch {
 	// pre-render
-	case p.scan.line == 261 && p.scan.dot == 1:
-		p.status.sprOverflow = false
-		p.status.spr0Hit = false
+	case p.scan.line == 261:
 		pre = true
-
+		if p.scan.dot == 1 {
+			p.status.sprOverflow = false
+			p.status.spr0Hit = false
+		}
 		fallthrough
 
 	// visible

@@ -139,7 +139,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 					addr = uint16(util.Bit(p.ctrl.sprTable))*0x1000 + uint16(s.tile)*16
 				}
 
-				y := p.scan.line - uint16(p.spr.primaryOAM[i].y)%uint16(p.sprHeight())
+				y := (p.scan.line - uint16(s.y)) % uint16(p.sprHeight())
 				if 0 < s.attr&0x80 {
 					y ^= p.sprHeight() - 1 // vertical flip
 				}

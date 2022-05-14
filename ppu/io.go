@@ -1,6 +1,8 @@
 package ppu
 
-import "github.com/thara/gorones/mapper"
+import (
+	"github.com/thara/gorones/mapper"
+)
 
 func (p *PPU) read(addr uint16) uint8 {
 	switch {
@@ -48,7 +50,7 @@ func paletteAddr(addr uint16) uint16 {
 	// http://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map
 	a := addr % 32
 	if a%4 == 0 {
-		return (a | 0x10)
+		return a | 0x10
 	}
 	return a
 }

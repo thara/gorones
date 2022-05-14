@@ -105,7 +105,12 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 			var n uint8
 			for i := 0; i < spriteCount; i++ {
 				y := p.spr.oam[i*4]
-				row := p.scan.line - uint16(y)
+				var row uint16
+				if pre {
+					row = uint16(y) - 1
+				} else {
+					row = p.scan.line - uint16(y)
+				}
 				if row < 0 || p.sprHeight() <= row {
 					continue
 				}

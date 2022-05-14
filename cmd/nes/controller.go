@@ -21,7 +21,7 @@ func newKbStdCtrl() *kbStdCtrl {
 }
 
 func (c *kbStdCtrl) update() {
-	c.keys = inpututil.AppendPressedKeys(c.keys)
+	c.keys = inpututil.AppendPressedKeys(c.keys[:0])
 
 	var state uint8
 	for _, k := range c.keys {

@@ -14,6 +14,9 @@ import (
 type Emulator struct {
 	nes *gorones.NES
 
+	ctrl1 *kbStdCtrl
+	ctrl2 *kbStdCtrl
+
 	renderer *renderer
 }
 
@@ -42,6 +45,8 @@ func newEmulator(path string) (*Emulator, error) {
 
 	var emu Emulator
 	emu.renderer = renderer
+	emu.ctrl1 = ctrl1
+	emu.ctrl2 = ctrl2
 
 	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer)
 	emu.nes.PowerOn()
@@ -58,6 +63,8 @@ func newEmulator(path string) (*Emulator, error) {
 }
 
 func (e *Emulator) Update() error {
+	e.ctrl1.update()
+	e.ctrl2.update()
 	e.nes.RunFrame()
 	return nil
 }

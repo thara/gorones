@@ -92,15 +92,16 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 		// sprites
 		switch p.scan.dot {
 		case 1:
+			// clear OAM
 			for i := range p.spr.secondaryOAM {
 				p.spr.secondaryOAM[i].clear()
 			}
-			// clear OAM
 			if pre {
 				p.status.sprOverflow = false
 				p.status.spr0Hit = false
 			}
 		case 257:
+			// eval sprites
 			var n uint8
 			for i := 0; i < spriteCount; i++ {
 				y := p.spr.oam[i*4]
@@ -121,17 +122,20 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				}
 			}
 		case 321:
+			// load sprites
 			for i := 0; i < spriteLimit; i++ {
 				p.spr.primaryOAM[i] = p.spr.secondaryOAM[i]
+				s := &p.spr.primaryOAM[i]
+
 				var addr uint16
 				if p.ctrl.spr8x16 {
-					addr = uint16(p.spr.primaryOAM[i].tile&1)*0x1000 + uint16(p.spr.primaryOAM[i].tile&^1)*16
+					addr = uint16(s.tile&1)*0x1000 + uint16(s.tile&^1)*16
 				} else {
-					addr = uint16(util.Bit(p.ctrl.sprTable))*0x1000 + uint16(p.spr.primaryOAM[i].tile)*16
+					addr = uint16(util.Bit(p.ctrl.sprTable))*0x1000 + uint16(s.tile)*16
 				}
 
 				y := p.scan.line - uint16(p.spr.primaryOAM[i].y)%uint16(p.sprHeight())
-				if 0 < p.spr.primaryOAM[i].attr&0x80 {
+				if 0 < s.attr&0x80 {
 					y ^= p.sprHeight() - 1 // vertical flip
 				}
 				addr += y + (y & 8) // second tile on 8x16

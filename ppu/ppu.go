@@ -20,7 +20,7 @@ type PPU struct {
 	Port Port
 
 	nt       [0x1000]uint8
-	palletes [0x0020]uint8
+	palettes [0x0020]uint8
 
 	buf [WIDTH * HEIGHT]uint8
 

@@ -33,7 +33,7 @@ func Test_toNTAddr(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			result := toNTAddr(tt.addr, tt.mirroring)
+			result := ntAddr(tt.addr, tt.mirroring)
 			assert.EqualValues(t, tt.expected, result)
 		})
 	}

@@ -232,8 +232,8 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 	}
 
 	p.scan.dot++
-	if 340 <= p.scan.dot {
-		p.scan.dot %= 340
+	if 340 < p.scan.dot {
+		p.scan.dot %= 341
 		p.scan.line++
 		if 261 < p.scan.line {
 			p.scan.line = 0

@@ -130,7 +130,7 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 }
 
 func ppuAddr(addr uint16) uint16 {
-	// repears every 8 bytes
+	// repeats every 8 bytes
 	return 0x2000 + addr%8
 
 }

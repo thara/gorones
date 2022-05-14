@@ -8,7 +8,7 @@ import (
 
 // kbStdCtrl is standard controller emulated by keyboard
 type kbStdCtrl struct {
-	ctrl input.Controller
+	ctrl *input.StandardController
 
 	keys []ebiten.Key
 }
@@ -40,11 +40,11 @@ func (c *kbStdCtrl) update() {
 		case ebiten.KeyK:
 			state |= input.StandardA
 
-		case ebiten.KeyShiftLeft:
+		case ebiten.KeySpace:
 			state |= input.StandardStart
-		case ebiten.KeyControlLeft:
+		case ebiten.KeyEnter:
 			state |= input.StandardSelect
 		}
 	}
-	c.ctrl.Write(state)
+	c.ctrl.Update(state)
 }

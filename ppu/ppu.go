@@ -1,6 +1,8 @@
 package ppu
 
 import (
+	"fmt"
+
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/mapper"
 	"github.com/thara/gorones/util"
@@ -281,7 +283,7 @@ func (p *PPU) pixel() {
 				if 0 < s.attr&sprAttrFlipHorizontally {
 					sprX ^= 7 // horizontal flip
 				}
-				palette := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)
+				palette := (util.NthBit(s.high, 7-sprX) << 1) | util.NthBit(s.low, 7-sprX)
 				if palette == 0 {
 					continue
 				}

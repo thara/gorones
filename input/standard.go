@@ -1,5 +1,7 @@
 package input
 
+import "github.com/thara/gorones/util"
+
 // StandardController
 // http://wiki.nesdev.com/w/index.php/Standard_controller
 type StandardController struct {
@@ -24,11 +26,7 @@ func (c *StandardController) Read() uint8 {
 	} else {
 		input := c.state & c.cur
 		c.cur = c.cur << 1
-		if 0 < input {
-			v = 1
-		} else {
-			v = 0
-		}
+		v = util.Bit(0 < input)
 	}
 	return v | 0x40
 }

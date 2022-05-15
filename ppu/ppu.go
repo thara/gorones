@@ -514,3 +514,13 @@ func (s Sprite) String() string {
 		"enabled:%t i:%d x:%d y:%d tile:%X attr:%X l:%d h:%d",
 		s.enabled, s.index, s.x, s.y, s.tile, s.attr, s.low, s.high)
 }
+
+type sprAttrFlag uint8
+
+const (
+	sprAttrBehindBg         = 1 << 5
+	sprAttrFlipHorizontally = 1 << 6
+	sprAttrFlipVertically   = 1 << 7
+
+	sprAttrPalette = 0b11
+)

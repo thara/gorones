@@ -136,7 +136,7 @@ func (p *PPU) Step(intr *cpu.Interrupt) {
 				}
 
 				y := (p.scan.line - uint16(s.y)) % uint16(p.sprHeight())
-				if 0 < s.attr&0x80 {
+				if 0 < s.attr&sprAttrFlipVertically {
 					y ^= p.sprHeight() - 1 // vertical flip
 				}
 				addr += y + (y & 8) // second tile on 8x16
@@ -278,7 +278,7 @@ func (p *PPU) pixel() {
 				if 8 <= sprX {
 					continue
 				}
-				if 0 < p.spr.primaryOAM[i].attr&0x40 {
+				if 0 < s.attr&sprAttrFlipHorizontally {
 					sprX ^= 7 // horizontal flip
 				}
 				palette := util.NthBit(s.high, 7-sprX)<<1 | util.NthBit(s.low, 7-sprX)

@@ -517,8 +517,6 @@ func (s Sprite) String() string {
 		s.enabled, s.index, s.x, s.y, s.tile, s.attr, s.low, s.high)
 }
 
-type sprAttrFlag uint8
-
 const (
 	sprAttrBehindBg         = 1 << 5
 	sprAttrFlipHorizontally = 1 << 6

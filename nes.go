@@ -101,9 +101,9 @@ func (b *cpuBus) ReadCPU(addr uint16) uint8 {
 func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 	// OAMDMA https://wiki.nesdev.org/w/index.php?title=PPU_registers#OAM_DMA_.28.244014.29_.3E_write
 	if addr == 0x4014 {
-		start := uint16(value << 2)
-		for addr := start; addr <= start+0xFF; addr++ {
-			m := b.ReadCPU(addr)
+		start := uint16(value) * 0x100
+		for i := uint16(0); i <= 0xFF; i++ {
+			m := b.ReadCPU(start + i)
 			b.WriteCPU(0x2004, m)
 		}
 		// dummy cycles

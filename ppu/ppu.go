@@ -508,3 +508,9 @@ func (s *Sprite) clear() {
 	s.low = 0
 	s.high = 0
 }
+
+func (s Sprite) String() string {
+	return fmt.Sprintf(
+		"enabled:%t i:%d x:%d y:%d tile:%X attr:%X l:%d h:%d",
+		s.enabled, s.index, s.x, s.y, s.tile, s.attr, s.low, s.high)
+}

@@ -265,7 +265,7 @@ func (p *PPU) pixel() {
 		}
 		// sprites
 		var spr uint8
-		var priority bool
+		var behindBg bool
 		if p.mask.spr && !(!p.mask.sprLeft && x < 8) {
 			// https://www.nesdev.org/wiki/PPU_sprite_priority
 			// Sprites with lower OAM indices are drawn in front
@@ -285,11 +285,11 @@ func (p *PPU) pixel() {
 				if palette == 0 {
 					continue
 				}
-				if s.index == 0 && bg != 0 && x != 255 {
+				if i == 0 && bg != 0 && x != 255 {
 					p.status.spr0Hit = true
 				}
-				spr = (palette | (s.attr&0b11)<<2) + 0x10
-				priority = util.IsSet(s.attr, 5)
+				spr = (palette | (s.attr&sprAttrPalette)<<2) + 0x10
+				behindBg = 0 < (s.attr & sprAttrBehindBg)
 			}
 		}
 
@@ -303,10 +303,10 @@ func (p *PPU) pixel() {
 			case 0 < bg && spr == 0:
 				palette = bg
 			case 0 < bg && 0 < spr:
-				if priority {
-					palette = spr
-				} else {
+				if behindBg {
 					palette = bg
+				} else {
+					palette = spr
 				}
 			}
 		}

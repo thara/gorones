@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_divider(t *testing.T) {
@@ -13,23 +11,15 @@ func Test_divider(t *testing.T) {
 	defer cancel()
 
 	d := runDivider(ctx, 5)
+	ch := d.output()
 
 	for i := 0; i < 5; i++ {
 		t.Logf("clock %d", i)
 		d.clock()
 
-		select {
-		case <-d.output():
-			assert.Failf(t, "should not output", "i=%d", i)
-		default:
-		}
+		assertNotRecv(t, ch, "i=%d", i)
 	}
 
 	d.clock()
-
-	select {
-	case <-d.output():
-	default:
-		assert.Fail(t, "should output")
-	}
+	assertRecv(t, ch)
 }

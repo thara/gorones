@@ -7,14 +7,18 @@ import (
 // https://www.nesdev.org/wiki/APU#Glossary
 
 type divider struct {
+	p   chan uint
 	in  chan interface{}
 	out chan interface{}
 }
 
-func runDivider(ctx context.Context, p int) *divider {
+func runDivider(ctx context.Context, p uint) *divider {
+	reload := make(chan uint)
+
 	in := make(chan interface{})
 	out := make(chan interface{})
 	go func() {
+		defer close(reload)
 		defer close(in)
 		defer close(out)
 
@@ -23,6 +27,8 @@ func runDivider(ctx context.Context, p int) *divider {
 			select {
 			case <-ctx.Done():
 				return
+			case p := <-reload:
+				n = p
 			case _, ok := <-in:
 				if !ok {
 					return
@@ -37,7 +43,11 @@ func runDivider(ctx context.Context, p int) *divider {
 			}
 		}
 	}()
-	return &divider{in, out}
+	return &divider{reload, in, out}
+}
+
+func (d *divider) reload(n uint) {
+	d.p <- n
 }
 
 func (d *divider) clock() {

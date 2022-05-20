@@ -10,7 +10,7 @@ func Test_frameCounter_step4(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	d := runDivider(ctx, 2)
+	d := runDivider(ctx, uint(2))
 
 	fc := runFrameCounter(ctx, d)
 
@@ -35,7 +35,7 @@ func Test_frameCounter_step4_frameInterrupt(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	d := runDivider(ctx, 2)
+	d := runDivider(ctx, uint(2))
 
 	fc := runFrameCounter(ctx, d)
 
@@ -76,7 +76,7 @@ func Test_frameCounter_step5(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	d := runDivider(ctx, 2)
+	d := runDivider(ctx, uint(2))
 
 	fc := runFrameCounter(ctx, d)
 	fc.update(0b10000000)

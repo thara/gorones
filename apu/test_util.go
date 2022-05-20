@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/constraints"
 )
 
 func assertRecv[T any](t *testing.T, ch <-chan T, msgAndArgs ...interface{}) {
@@ -38,7 +39,7 @@ func assertNotRecv[T any](t *testing.T, ch <-chan T, msgAndArgs ...interface{}) 
 	}
 }
 
-func clock(t *testing.T, d *divider, n int) {
+func clock[T constraints.Unsigned](t *testing.T, d *divider[T], n int) {
 	t.Helper()
 
 	for i := 0; i < n; i++ {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/thara/gorones/util"
+	"golang.org/x/exp/constraints"
 )
 
 // https://www.nesdev.org/wiki/APU_Frame_Counter
@@ -16,7 +17,7 @@ type frameCounter struct {
 	irq     chan bool
 }
 
-func runFrameCounter(ctx context.Context, divider *divider) *frameCounter {
+func runFrameCounter[T constraints.Unsigned](ctx context.Context, divider *divider[T]) *frameCounter {
 	upd := make(chan byte)
 	quarter := make(chan interface{})
 	half := make(chan interface{})

@@ -2,21 +2,24 @@ package apu
 
 import (
 	"context"
+
+	"golang.org/x/exp/constraints"
 )
 
 // https://www.nesdev.org/wiki/APU#Glossary
 
-type divider struct {
-	p   chan uint
+type divider[T constraints.Unsigned] struct {
+	p   chan T
 	in  chan interface{}
 	out chan interface{}
 }
 
-func runDivider(ctx context.Context, p uint) *divider {
-	reload := make(chan uint)
+func runDivider[T constraints.Unsigned](ctx context.Context, p T) *divider[T] {
+	reload := make(chan T)
 
 	in := make(chan interface{})
 	out := make(chan interface{})
+
 	go func() {
 		defer close(reload)
 		defer close(in)
@@ -43,17 +46,9 @@ func runDivider(ctx context.Context, p uint) *divider {
 			}
 		}
 	}()
-	return &divider{reload, in, out}
+	return &divider[T]{reload, in, out}
 }
 
-func (d *divider) reload(n uint) {
-	d.p <- n
-}
-
-func (d *divider) clock() {
-	d.in <- struct{}{}
-}
-
-func (d *divider) output() <-chan interface{} {
-	return d.out
-}
+func (d *divider[T]) reload(n T)                 { d.p <- n }
+func (d *divider[T]) clock()                     { d.in <- struct{}{} }
+func (d *divider[T]) output() <-chan interface{} { return d.out }

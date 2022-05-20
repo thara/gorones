@@ -27,15 +27,14 @@ func runSweep(ctx context.Context, cmp sweepComplement) *sweep {
 		defer close(upd)
 		defer close(out)
 
-		enabled := false
+		var (
+			enabled      bool
+			negate       bool
+			shift        uint8
+			muted        bool
+			targetPeriod uint16
+		)
 		var p uint8
-		negate := false
-		var shift uint8
-
-		muted := false
-
-		var targetPeriod uint16
-
 		d := runDivider(ctx, p)
 
 		for {

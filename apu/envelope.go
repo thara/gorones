@@ -26,14 +26,13 @@ func runEnvelope(ctx context.Context) *envelope {
 		defer close(upd)
 		defer close(out)
 
-		start := false
-
-		loopFlag := false
-		constVol := false
-		decayLevel := 0
-
-		var v uint = 0
-
+		var (
+			start      bool
+			loopFlag   bool
+			constVol   bool
+			decayLevel uint8
+		)
+		var v uint
 		d := runDivider(ctx, v)
 		for {
 			select {
@@ -71,7 +70,7 @@ func runEnvelope(ctx context.Context) *envelope {
 				if constVol {
 					out <- uint8(v)
 				} else {
-					out <- uint8(decayLevel)
+					out <- decayLevel
 				}
 			}
 		}

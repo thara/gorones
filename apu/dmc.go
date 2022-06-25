@@ -55,7 +55,11 @@ func (c *dmc) write(addr uint16, value uint8) {
 	}
 }
 
-func (c *dmc) clockTimer(memoryReader func(uint16) uint8) bool {
+type DMCMemoryReader interface {
+	read(uint16) uint8
+}
+
+func (c *dmc) clockTimer(memoryReader DMCMemoryReader) bool {
 
 	var cpuStall = false
 
@@ -67,7 +71,7 @@ func (c *dmc) clockTimer(memoryReader func(uint16) uint8) bool {
 
 		// Memory Reader
 		if c.sampleBufferEmpty && c.bytesRemainingCounter != 0 {
-			c.sampleBuffer = memoryReader(c.addressCounter)
+			c.sampleBuffer = memoryReader.read(c.addressCounter)
 			c.addressCounter += 1
 			if c.addressCounter == 0 {
 				c.addressCounter = 0x8000

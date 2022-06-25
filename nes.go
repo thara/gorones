@@ -1,6 +1,7 @@
 package gorones
 
 import (
+	"github.com/thara/gorones/apu"
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/input"
 	"github.com/thara/gorones/mapper"
@@ -11,16 +12,21 @@ import (
 type NES struct {
 	cpu *cpu.CPU
 	ppu *ppu.PPU
+	apu *apu.APU
 
 	interrupt *cpu.Interrupt
 }
 
-func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, renderer ppu.FrameRenderer) *NES {
+func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, frameRenderer ppu.FrameRenderer, audioRenderer apu.AudioRenderer) *NES {
 	intr := cpu.NoInterrupt
 
-	ppu := ppu.New(m, renderer)
+	ppu := ppu.New(m, frameRenderer)
+
+	apu := apu.New(audioRenderer)
 	t := cpuTicker{ppu: ppu, interrupt: &intr}
-	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
+	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, apuPort: apu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
+	t.dmcMemoryReader = &ctx
+
 	return &NES{
 		cpu:       cpu.New(&t, &ctx),
 		ppu:       ppu,
@@ -56,14 +62,23 @@ func (n *NES) step() {
 
 type cpuTicker struct {
 	ppu *ppu.PPU
+	apu *apu.APU
 
 	cycles uint64
 
 	interrupt *cpu.Interrupt
+
+	dmcMemoryReader apu.DMCMemoryReader
 }
 
 func (c *cpuTicker) Tick() {
 	c.cycles += 1
+
+	cpuSteel := c.apu.Step(c.dmcMemoryReader)
+	if cpuSteel {
+		c.cycles += 4
+	}
+
 	// 3 PPU cycles per 1 CPU cycle
 	c.ppu.Step(c.interrupt)
 	c.ppu.Step(c.interrupt)
@@ -76,6 +91,7 @@ type cpuBus struct {
 	mapper mapper.Mapper
 
 	ppuPort ppu.Port
+	apuPort apu.Port
 
 	ctrl1, ctrl2 input.Controller
 
@@ -88,6 +104,12 @@ func (b *cpuBus) ReadCPU(addr uint16) uint8 {
 		return b.wram[addr%0x0800]
 	case 0x2000 <= addr && addr <= 0x3FFF:
 		return b.ppuPort.ReadRegister(ppuAddr(addr))
+
+	case 0x4000 <= addr && addr <= 0x4013:
+		fallthrough
+	case addr == 0x4015:
+		b.apuPort.Read(addr)
+
 	case addr == 0x4016:
 		return b.ctrl1.Read()
 	case addr == 0x4017:
@@ -123,10 +145,15 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 		b.ctrl1.Write(value)
 	case addr == 0x4017:
 		b.ctrl2.Write(value)
-		// TODO apu write
+		b.apuPort.Write(addr, value)
 	case 0x4020 <= addr && addr <= 0xFFFF:
 		b.mapper.Write(addr, value)
 	}
+}
+
+// adapt to apu.DMCMemoryReader
+func (b *cpuBus) Read(addr uint16) uint8 {
+	return b.ReadCPU(addr)
 }
 
 func ppuAddr(addr uint16) uint16 {

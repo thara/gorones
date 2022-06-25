@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/thara/gorones/apu"
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/input"
 	"github.com/thara/gorones/mapper"
@@ -20,6 +21,10 @@ import (
 type nopFrameRenderer struct{}
 
 func (nopFrameRenderer) UpdateFrame(*[ppu.WIDTH * ppu.HEIGHT]uint8) {}
+
+type nopAudioRenderer struct{}
+
+func (nopAudioRenderer) Write(float32) {}
 
 func Test_nestest(t *testing.T) {
 	f, err := os.Open("testdata/nestest.nes")
@@ -36,8 +41,11 @@ func Test_nestest(t *testing.T) {
 	intr := cpu.NoInterrupt
 
 	ppu := ppu.New(m, new(nopFrameRenderer))
-	ticker := cpuTicker{ppu: ppu, interrupt: &intr}
-	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker}
+	apu := apu.New(new(nopAudioRenderer))
+	ticker := cpuTicker{ppu: ppu, apu: apu, interrupt: &intr}
+	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker, apuPort: apu.Port}
+	ticker.dmcMemoryReader = &bus
+
 	nes := &NES{
 		cpu:       cpu.New(&ticker, &bus),
 		interrupt: &intr,

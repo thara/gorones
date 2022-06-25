@@ -18,24 +18,27 @@ type APU struct {
 	frameSequenceStep   int
 	frameInterrupted    bool
 
-	audio           Audio
-	dmcMemoryReader DMCMemoryReader
+	audio AudioRenderer
+
+	Port Port
 }
 
-func New(audio Audio, dmcMemoryReader DMCMemoryReader) *APU {
+func New(audio AudioRenderer) *APU {
 	const (
 		samplingFrequency uint = 1_789_772
 		downSamplingRate  uint = 44100
 	)
-	return &APU{
-		sampleRate:      samplingFrequency / downSamplingRate,
-		framePeriod:     7458,
-		audio:           audio,
-		dmcMemoryReader: dmcMemoryReader}
+	apu := &APU{
+		sampleRate:  samplingFrequency / downSamplingRate,
+		framePeriod: 7458,
+		audio:       audio,
+	}
+	apu.Port = Port{apu}
+	return apu
 }
 
-type Audio interface {
-	write(float32)
+type AudioRenderer interface {
+	Write(float32)
 }
 
 func (a *APU) frameSequenceMode() frameSequenceMode {
@@ -47,23 +50,11 @@ func (a *APU) frameSequenceMode() frameSequenceMode {
 
 func (a *APU) frameInterruptInhibit() bool { return util.IsSet(a.frameCounterControl, 6) }
 
-func (a *APU) Reset() {
-	a.write(0x4017, 0) // frame irq enabled
-	a.write(0x4015, 0) // all channels disabled
-
-	for addr := uint16(0x4000); addr <= 0x400F; addr++ {
-		a.write(addr, 0)
-	}
-	for addr := uint16(0x4010); addr <= 0x4013; addr++ {
-		a.write(addr, 0)
-	}
-}
-
-func (a *APU) Step() bool {
+func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 	a.cycles += 1
 
 	if a.cycles%a.sampleRate == 0 {
-		a.audio.write(a.sample())
+		a.audio.Write(a.sample())
 	}
 
 	var cpuStall = false
@@ -71,7 +62,7 @@ func (a *APU) Step() bool {
 		a.pulse1.clockTimer()
 		a.pulse2.clockTimer()
 		a.noise.clockTimer()
-		cpuStall = a.dmc.clockTimer(a.dmcMemoryReader)
+		cpuStall = a.dmc.clockTimer(dmcMemoryReader)
 	}
 
 	a.triangle.clockTimer()
@@ -151,33 +142,49 @@ func (a *APU) sample() float32 {
 	return pulseOut + tndOut
 }
 
-func (a *APU) read(addr uint16) uint8 {
+type Port struct {
+	apu *APU
+}
+
+func (a *Port) Reset() {
+	a.Write(0x4017, 0) // frame irq enabled
+	a.Write(0x4015, 0) // all channels disabled
+
+	for addr := uint16(0x4000); addr <= 0x400F; addr++ {
+		a.Write(addr, 0)
+	}
+	for addr := uint16(0x4010); addr <= 0x4013; addr++ {
+		a.Write(addr, 0)
+	}
+}
+
+func (a *Port) Read(addr uint16) uint8 {
 	switch addr {
 	case 0x4015:
 		var value uint8
-		if a.dmc.interrupted {
+		if a.apu.dmc.interrupted {
 			value |= 0x80
 		}
-		if a.frameInterrupted && !a.frameInterruptInhibit() {
+		if a.apu.frameInterrupted && !a.apu.frameInterruptInhibit() {
 			value |= 0x40
 		}
-		if 0 < a.dmc.bytesRemainingCounter {
+		if 0 < a.apu.dmc.bytesRemainingCounter {
 			value |= 0x20
 		}
-		if 0 < a.noise.lengthCounter.count {
+		if 0 < a.apu.noise.lengthCounter.count {
 			value |= 0x08
 		}
-		if 0 < a.triangle.lengthCounter.count {
+		if 0 < a.apu.triangle.lengthCounter.count {
 			value |= 0x04
 		}
-		if 0 < a.pulse2.lengthCounter.count {
+		if 0 < a.apu.pulse2.lengthCounter.count {
 			value |= 0x02
 		}
-		if 0 < a.pulse1.lengthCounter.count {
+		if 0 < a.apu.pulse1.lengthCounter.count {
 			value |= 0x01
 		}
 
-		a.frameInterrupted = false
+		a.apu.frameInterrupted = false
 
 		return value
 	default:
@@ -185,31 +192,31 @@ func (a *APU) read(addr uint16) uint8 {
 	}
 }
 
-func (a *APU) write(addr uint16, value uint8) {
+func (a *Port) Write(addr uint16, value uint8) {
 	switch {
 	case addr <= 0x4000 && addr <= 0x4003:
-		a.pulse1.write(addr, value)
+		a.apu.pulse1.write(addr, value)
 
 	case addr <= 0x4004 && addr <= 0x4007:
-		a.pulse2.write(addr, value)
+		a.apu.pulse2.write(addr, value)
 
 	case addr <= 0x4008 && addr <= 0x400B:
-		a.triangle.write(addr, value)
+		a.apu.triangle.write(addr, value)
 
 	case addr <= 0x400C && addr <= 0x400F:
-		a.noise.write(addr, value)
+		a.apu.noise.write(addr, value)
 
 	case addr <= 0x4010 && addr <= 0x4013:
-		a.dmc.write(addr, value)
+		a.apu.dmc.write(addr, value)
 
 	case addr == 0x4015:
-		a.pulse1.lengthCounter.enable(util.IsSet(value, 0))
-		a.pulse2.lengthCounter.enable(util.IsSet(value, 1))
-		a.triangle.lengthCounter.enable(util.IsSet(value, 2))
-		a.noise.lengthCounter.enable(util.IsSet(value, 3))
-		a.dmc.enabled = util.IsSet(value, 4)
+		a.apu.pulse1.lengthCounter.enable(util.IsSet(value, 0))
+		a.apu.pulse2.lengthCounter.enable(util.IsSet(value, 1))
+		a.apu.triangle.lengthCounter.enable(util.IsSet(value, 2))
+		a.apu.noise.lengthCounter.enable(util.IsSet(value, 3))
+		a.apu.dmc.enabled = util.IsSet(value, 4)
 	case addr == 0x4017:
-		a.frameCounterControl = value
+		a.apu.frameCounterControl = value
 	default:
 		break
 	}

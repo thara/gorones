@@ -72,7 +72,7 @@ func newNES(path string) (*gorones.NES, error) {
 
 	ctrl := new(input.StandardController)
 
-	nes := gorones.NewNES(m, ctrl, ctrl, new(renderer))
+	nes := gorones.NewNES(m, ctrl, ctrl, new(renderer), new(nopAudio))
 	return nes, nil
 }
 
@@ -91,6 +91,10 @@ func (r *renderer) UpdateFrame(buf *[ppu.WIDTH * ppu.HEIGHT]uint8) {
 	}
 	fmt.Print("\n=================================================\n")
 }
+
+type nopAudio struct{}
+
+func (a *nopAudio) Write(float32) {}
 
 var palette [255]uint32 = [255]uint32{
 	0x7C7C7CFF, 0x0000FCFF, 0x0000BCFF, 0x4428BCFF, 0x940084FF, 0xA80020FF, 0xA81000FF, 0x881400FF,

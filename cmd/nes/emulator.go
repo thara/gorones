@@ -48,7 +48,7 @@ func newEmulator(path string) (*Emulator, error) {
 	emu.ctrl1 = ctrl1
 	emu.ctrl2 = ctrl2
 
-	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer)
+	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer, new(audioRenderer))
 	emu.nes.PowerOn()
 
 	if nestest {

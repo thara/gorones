@@ -3,13 +3,13 @@ package apu
 import "context"
 
 type sequencer struct {
-	init chan interface{}
+	init chan uint8
 	clk  chan interface{}
 	out  chan uint8
 }
 
 func runSequencer(ctx context.Context) *sequencer {
-	init := make(chan interface{})
+	init := make(chan uint8)
 	clock := make(chan interface{})
 	out := make(chan uint8, 1)
 	go func() {
@@ -22,8 +22,8 @@ func runSequencer(ctx context.Context) *sequencer {
 			select {
 			case <-ctx.Done():
 				return
-			case <-init:
-				seq = 0
+			case v := <-init:
+				seq = v
 			case <-clock:
 				seq += 1
 				if seq == 8 {
@@ -37,5 +37,5 @@ func runSequencer(ctx context.Context) *sequencer {
 }
 
 func (s *sequencer) clock()               { s.clk <- struct{}{} }
-func (s *sequencer) restart()             { s.init <- struct{}{} }
+func (s *sequencer) restart(v uint8)      { s.init <- v }
 func (s *sequencer) output() <-chan uint8 { return s.out }

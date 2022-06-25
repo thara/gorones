@@ -8,9 +8,7 @@ type pulseChannel struct {
 	low    uint8
 	high   uint8
 
-	lengthCounter uint
-
-	enabled bool
+	lengthCounter lengthCounter
 
 	timerCounter   uint16
 	timerSequencer int
@@ -33,17 +31,9 @@ const (
 	sweepTwoComplement                 = 1
 )
 
-func (c *pulseChannel) enable(v bool) {
-	c.enabled = v
-	if !v {
-		c.lengthCounter = 0
-	}
-}
-
 func (c *pulseChannel) dutyCycle() int { return int(c.volume >> 6) }
 
 func (c *pulseChannel) envelopeLoop() bool      { return util.IsSet(c.volume, 5) }
-func (c *pulseChannel) lengthCounterHalt() bool { return util.IsSet(c.volume, 5) }
 func (c *pulseChannel) useConstantVolume() bool { return util.IsSet(c.volume, 4) }
 func (c *pulseChannel) envelopePeriod() uint8   { return c.volume & 0b1111 }
 
@@ -63,6 +53,7 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 
 	case 0x4000:
 		c.volume = value
+		c.lengthCounter.halt = util.IsSet(c.volume, 5)
 	case 0x4001:
 		c.sweep = value
 		c.sweepReload = true
@@ -71,9 +62,7 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 		c.timerPeriod = c.timerReload()
 	case 0x4003:
 		c.high = value
-		if c.enabled {
-			c.lengthCounter = lengthTable[c.lengthCounterLoad()]
-		}
+		c.lengthCounter.reload(c.lengthCounterLoad())
 		c.timerPeriod = c.timerReload()
 		c.timerSequencer = 0
 		c.envelopeStart = true
@@ -137,14 +126,8 @@ func (c *pulseChannel) clockSweepUnit() {
 	}
 }
 
-func (c *pulseChannel) clockLengthCounter() {
-	if 0 < c.lengthCounter && !c.lengthCounterHalt() {
-		c.lengthCounter -= 1
-	}
-}
-
 func (c *pulseChannel) output() uint8 {
-	if c.lengthCounter == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle()][c.timerSequencer] == 0 {
+	if c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle()][c.timerSequencer] == 0 {
 		return 0
 	}
 	var volume uint8
@@ -154,11 +137,6 @@ func (c *pulseChannel) output() uint8 {
 		volume = c.envelopeDecayLevelCounter
 	}
 	return volume & 0b1111
-}
-
-var lengthTable = []uint{
-	10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
-	12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30,
 }
 
 var dutyTable [4][8]uint8 = [4][8]uint8{

@@ -79,7 +79,6 @@ type Audio struct {
 }
 
 func (a *Audio) Write(v float32) {
-	fmt.Println(v)
 	select {
 	case a.channel <- v:
 	default:

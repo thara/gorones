@@ -1,6 +1,10 @@
 package apu
 
-import "github.com/thara/gorones/util"
+import (
+	"fmt"
+
+	"github.com/thara/gorones/util"
+)
 
 type pulseChannel struct {
 	volume uint8
@@ -50,8 +54,8 @@ func (c *pulseChannel) timerReload() uint16 { return uint16(c.low) | (uint16(c.t
 
 func (c *pulseChannel) write(addr uint16, value uint8) {
 	switch addr {
-
 	case 0x4000:
+		fmt.Printf("%04x %b\n", addr, value)
 		c.volume = value
 		c.lengthCounter.halt = util.IsSet(c.volume, 5)
 	case 0x4001:

@@ -1,6 +1,8 @@
 package apu
 
-import "github.com/thara/gorones/util"
+import (
+	"github.com/thara/gorones/util"
+)
 
 type APU struct {
 	sampleRate  uint
@@ -32,6 +34,9 @@ func New(audio AudioRenderer) *APU {
 		sampleRate:  samplingFrequency / downSamplingRate,
 		framePeriod: 7458,
 		audio:       audio,
+		pulse1:      pulseChannel{carryMode: sweepOneComplement},
+		pulse2:      pulseChannel{carryMode: sweepTwoComplement},
+		noise:       noiseChannel{shiftRegister: 1},
 	}
 	apu.Port = Port{apu}
 	return apu
@@ -43,9 +48,9 @@ type AudioRenderer interface {
 
 func (a *APU) frameSequenceMode() frameSequenceMode {
 	if util.IsSet(a.frameCounterControl, 7) {
-		return frameSequenceMode4Step
+		return frameSequenceMode5Step
 	}
-	return frameSequenceMode5Step
+	return frameSequenceMode4Step
 }
 
 func (a *APU) frameInterruptInhibit() bool { return util.IsSet(a.frameCounterControl, 6) }
@@ -134,7 +139,6 @@ func (a *APU) sample() float32 {
 	var tndOut float32
 	if triangle != 0.0 || noise != 0.0 || dmc != 0.0 {
 		tndOut = 159.79 / (1/((triangle/8227)+(noise/12241)+(dmc/22638)) + 100)
-		// tndOut = 0.0
 	} else {
 		tndOut = 0.0
 	}

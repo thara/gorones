@@ -23,13 +23,14 @@ func NewNES(m mapper.Mapper, ctrl1, ctrl2 input.Controller, frameRenderer ppu.Fr
 	ppu := ppu.New(m, frameRenderer)
 
 	apu := apu.New(audioRenderer)
-	t := cpuTicker{ppu: ppu, interrupt: &intr}
+	t := cpuTicker{ppu: ppu, apu: apu, interrupt: &intr}
 	ctx := cpuBus{mapper: m, ppuPort: ppu.Port, apuPort: apu.Port, ctrl1: ctrl1, ctrl2: ctrl2, t: &t}
 	t.dmcMemoryReader = &ctx
 
 	return &NES{
 		cpu:       cpu.New(&t, &ctx),
 		ppu:       ppu,
+		apu:       apu,
 		interrupt: &intr,
 	}
 }
@@ -40,6 +41,7 @@ func (n *NES) PowerOn() {
 
 func (n *NES) Reset() {
 	n.cpu.Reset()
+	n.apu.Port.Reset()
 }
 
 func (n *NES) InitNEStest() {
@@ -141,6 +143,12 @@ func (b *cpuBus) WriteCPU(addr uint16, value uint8) {
 		b.wram[addr%0x0800] = value
 	case 0x2000 <= addr && addr <= 0x3FFF:
 		b.ppuPort.WriteRegister(ppuAddr(addr), value)
+
+	case 0x4000 <= addr && addr <= 0x4013:
+		fallthrough
+	case addr == 0x4015:
+		b.apuPort.Write(addr, value)
+
 	case addr == 0x4016:
 		b.ctrl1.Write(value)
 	case addr == 0x4017:

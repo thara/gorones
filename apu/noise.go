@@ -20,7 +20,6 @@ type noiseChannel struct {
 }
 
 func (c *noiseChannel) envelopeLoop() bool      { return util.IsSet(c.envelope, 5) }
-func (c *noiseChannel) lengthCounterHalt() bool { return util.IsSet(c.envelope, 5) }
 func (c *noiseChannel) useConstantVolume() bool { return util.IsSet(c.envelope, 4) }
 func (c *noiseChannel) envelopePeriod() uint8   { return c.envelope & 0b1111 }
 
@@ -31,6 +30,7 @@ func (c *noiseChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x400C:
 		c.envelope = value
+		c.lengthCounter.halt = util.IsSet(c.envelope, 5)
 	case 0x400E:
 		c.period = value
 		c.timerPeriod = noiseTimerPeriodTable[c.timerEntry()]

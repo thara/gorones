@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gordonklaus/portaudio"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/thara/gorones/ppu"
 )
@@ -29,7 +30,36 @@ func main() {
 
 	path := os.Args[1]
 
-	emu, err := newEmulator(path)
+	portaudio.Initialize()
+	defer portaudio.Terminate()
+	host, err := portaudio.DefaultHostApi()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	audio := &Audio{channel: make(chan float32, 44100)}
+	stream, err := portaudio.OpenStream(
+		portaudio.HighLatencyParameters(nil, host.DefaultOutputDevice),
+		func(out []float32) {
+			for i := range out {
+				select {
+				case sample := <-audio.channel:
+					out[i] = sample
+				default:
+					out[i] = 0
+				}
+			}
+		},
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := stream.Start(); err != nil {
+		log.Fatalln(err)
+	}
+	audio.stream = stream
+	defer audio.stream.Close()
+
+	emu, err := newEmulator(path, audio)
 	if err != nil {
 		log.Fatalf("fail to initialize emulator for %s: %v", path, err)
 	}
@@ -40,5 +70,18 @@ func main() {
 	ebiten.SetWindowTitle("gorones")
 	if err := ebiten.RunGame(emu); err != nil {
 		log.Fatal(err)
+	}
+}
+
+type Audio struct {
+	stream  *portaudio.Stream
+	channel chan float32
+}
+
+func (a *Audio) Write(v float32) {
+	fmt.Println(v)
+	select {
+	case a.channel <- v:
+	default:
 	}
 }

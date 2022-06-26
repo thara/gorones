@@ -5,10 +5,8 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/thara/gorones"
-	"github.com/thara/gorones/apu"
 	"github.com/thara/gorones/mapper"
 	"github.com/thara/gorones/ppu"
 )
@@ -20,11 +18,9 @@ type Emulator struct {
 	ctrl2 *kbStdCtrl
 
 	renderer *renderer
-
-	audioBuf *apu.AudioBuffer
 }
 
-func newEmulator(path string) (*Emulator, error) {
+func newEmulator(path string, audio *Audio) (*Emulator, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("fail to open %s: %v", path, err)
@@ -46,26 +42,14 @@ func newEmulator(path string) (*Emulator, error) {
 	ctrl2 := newKbStdCtrl()
 
 	renderer := newRenderer()
-	audioBuf := apu.NewAudioBuffer(4096)
 
 	var emu Emulator
 	emu.renderer = renderer
 	emu.ctrl1 = ctrl1
 	emu.ctrl2 = ctrl2
 
-	emu.audioBuf = &audioBuf
-
-	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer, &audioBuf)
+	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer, audio)
 	emu.nes.PowerOn()
-
-	audioContext := audio.NewContext(1_789_772 / 44100)
-
-	audioPlayer, err := audioContext.NewPlayer(&audioBuf)
-	if err != nil {
-		return nil, fmt.Errorf("fail to init audio player: %v", err)
-	}
-	audioPlayer.SetVolume(0.5)
-	audioPlayer.Play()
 
 	if nestest {
 		fmt.Println("init for nestest")

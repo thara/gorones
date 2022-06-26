@@ -3,6 +3,7 @@ module github.com/thara/gorones
 go 1.18
 
 require (
+	github.com/gordonklaus/portaudio v0.0.0-20220320131553-cc649ad523c1
 	github.com/hajimehoshi/ebiten/v2 v2.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1
@@ -13,7 +14,6 @@ require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
-	github.com/hajimehoshi/oto/v2 v2.1.0 // indirect
 	github.com/jezek/xgb v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20220428152302-39d4317da171 // indirect

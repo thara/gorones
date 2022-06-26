@@ -1,6 +1,8 @@
 package apu
 
 import (
+	"fmt"
+
 	"github.com/thara/gorones/util"
 )
 
@@ -52,22 +54,22 @@ func (c *pulseChannel) timerReload() uint16 { return uint16(c.low) | (uint16(c.t
 
 func (c *pulseChannel) write(addr uint16, value uint8) {
 	switch addr {
-	case 0x4000:
+	case 0x4000, 0x4004:
 		c.volume = value
 		c.lengthCounter.halt = util.IsSet(c.volume, 5)
-	case 0x4001:
+	case 0x4001, 0x4005:
 		c.sweep = value
 		c.sweepReload = true
-	case 0x4002:
+	case 0x4002, 0x4006:
 		c.low = value
 		c.timerPeriod = c.timerReload()
-	case 0x4003:
+	case 0x4003, 0x4007:
 		c.high = value
 		c.lengthCounter.reload(c.lengthCounterLoad())
+		fmt.Printf("pulse %04x %b %#v %d\n", addr, value, c.lengthCounter, c.lengthCounterLoad())
 		c.timerPeriod = c.timerReload()
 		c.timerSequencer = 0
 		c.envelopeStart = true
-
 	}
 }
 

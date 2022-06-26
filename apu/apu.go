@@ -1,6 +1,8 @@
 package apu
 
 import (
+	"fmt"
+
 	"github.com/thara/gorones/util"
 )
 
@@ -197,20 +199,21 @@ func (a *Port) Read(addr uint16) uint8 {
 }
 
 func (a *Port) Write(addr uint16, value uint8) {
+	fmt.Printf("write %04x, %b\n", addr, value)
 	switch {
-	case addr <= 0x4000 && addr <= 0x4003:
+	case 0x4000 <= addr && addr <= 0x4003:
 		a.apu.pulse1.write(addr, value)
 
-	case addr <= 0x4004 && addr <= 0x4007:
+	case 0x4004 <= addr && addr <= 0x4007:
 		a.apu.pulse2.write(addr, value)
 
-	case addr <= 0x4008 && addr <= 0x400B:
+	case 0x4008 <= addr && addr <= 0x400B:
 		a.apu.triangle.write(addr, value)
 
-	case addr <= 0x400C && addr <= 0x400F:
+	case 0x400C <= addr && addr <= 0x400F:
 		a.apu.noise.write(addr, value)
 
-	case addr <= 0x4010 && addr <= 0x4013:
+	case 0x4010 <= addr && addr <= 0x4013:
 		a.apu.dmc.write(addr, value)
 
 	case addr == 0x4015:

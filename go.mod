@@ -13,6 +13,7 @@ require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
+	github.com/hajimehoshi/oto/v2 v2.1.0 // indirect
 	github.com/jezek/xgb v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20220428152302-39d4317da171 // indirect

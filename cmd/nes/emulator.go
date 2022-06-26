@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/thara/gorones"
 	"github.com/thara/gorones/apu"
@@ -52,8 +53,19 @@ func newEmulator(path string) (*Emulator, error) {
 	emu.ctrl1 = ctrl1
 	emu.ctrl2 = ctrl2
 
+	emu.audioBuf = &audioBuf
+
 	emu.nes = gorones.NewNES(m, ctrl1.ctrl, ctrl2.ctrl, renderer, &audioBuf)
 	emu.nes.PowerOn()
+
+	audioContext := audio.NewContext(1_789_772 / 44100)
+
+	audioPlayer, err := audioContext.NewPlayer(&audioBuf)
+	if err != nil {
+		return nil, fmt.Errorf("fail to init audio player: %v", err)
+	}
+	audioPlayer.SetVolume(0.5)
+	audioPlayer.Play()
 
 	if nestest {
 		fmt.Println("init for nestest")

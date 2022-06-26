@@ -1,6 +1,8 @@
 package apu
 
-import "github.com/thara/gorones/util"
+import (
+	"github.com/thara/gorones/util"
+)
 
 type triangleChannel struct {
 	linearCounterSetup uint8

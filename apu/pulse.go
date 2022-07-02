@@ -46,17 +46,17 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x4000, 0x4004:
 		c.volume = value
-		c.dutyCycle = c.volume >> 6
+		c.dutyCycle = value >> 6
 		c.lengthCounter.halt = (value>>5)&1 == 0
 		c.envelopeLoop = (value>>5)&1 == 1
 		c.useConstantVolume = (value>>4)&1 == 1
-		c.envelopePeriod = c.volume & 0b1111
+		c.envelopePeriod = value & 0b1111
 	case 0x4001, 0x4005:
 		c.sweep = value
 		c.sweepEnabled = (value>>7)&1 == 1
-		c.sweepPeriod = (c.sweep & 0b01110000) >> 4
+		c.sweepPeriod = (value & 0b01110000) >> 4
 		c.sweepNegate = (value>>3)&1 == 1
-		c.sweepShift = c.sweep & 0b111
+		c.sweepShift = value & 0b111
 		c.sweepReload = true
 	case 0x4002, 0x4006:
 		c.timerPeriod = uint16(value) | (uint16(c.timerPeriod&0xFF00) << 8)

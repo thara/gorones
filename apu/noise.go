@@ -1,12 +1,13 @@
 package apu
 
-import "github.com/thara/gorones/util"
-
 type noiseChannel struct {
 	enabled bool
 
-	envelope uint8
-	period   uint8
+	envelopeLoop      bool
+	useConstantVolume bool
+	envelopePeriod    uint8
+
+	modeFlag bool
 
 	envelopeCounter           uint8
 	envelopeDecayLevelCounter uint8
@@ -21,24 +22,20 @@ type noiseChannel struct {
 	lengthCounterHalt bool
 }
 
-func (c *noiseChannel) envelopeLoop() bool      { return util.IsSet(c.envelope, 5) }
-func (c *noiseChannel) useConstantVolume() bool { return util.IsSet(c.envelope, 4) }
-func (c *noiseChannel) envelopePeriod() uint8   { return c.envelope & 0b1111 }
-
-func (c *noiseChannel) mode() bool        { return util.IsSet(c.period, 7) }
-func (c *noiseChannel) timerEntry() uint8 { return c.period & 0b1111 }
-
 func (c *noiseChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x400C:
-		c.envelope = value
 		c.lengthCounterHalt = (value>>5)&1 == 1
+		c.envelopeLoop = (value>>5)&1 == 1
+		c.useConstantVolume = (value>>4)&1 == 1
+		c.envelopePeriod = value & 0b1111
+		c.envelopeStart = true
 	case 0x400E:
-		c.period = value
-		c.timerPeriod = noiseTimerPeriodTable[c.timerEntry()]
+		c.modeFlag = (value>>7)&1 == 1
+		c.timerPeriod = noiseTimerPeriodTable[value&0b1111]
 	case 0x400F:
 		if c.enabled {
-			c.lengthCounter = lengthTable[(value&0b11111000)>>3]
+			c.lengthCounter = lengthTable[value>>3]
 		}
 		c.envelopeStart = true
 	}
@@ -58,13 +55,13 @@ func (c *noiseChannel) clockTimer() {
 		c.timerCounter = c.timerPeriod
 
 		// LFSR
-		var i int
-		if c.mode() {
-			i = 6
+		var shift uint8
+		if c.modeFlag {
+			shift = 6
 		} else {
-			i = 1
+			shift = 1
 		}
-		feedback := c.shiftRegister ^ util.NthBit(c.shiftRegister, i)
+		feedback := (c.shiftRegister & 1) ^ ((c.shiftRegister >> shift) & 1)
 		c.shiftRegister >>= 1
 		c.shiftRegister |= (feedback << 14)
 	}
@@ -73,19 +70,21 @@ func (c *noiseChannel) clockTimer() {
 func (c *noiseChannel) clockEnvelope() {
 	if c.envelopeStart {
 		c.envelopeDecayLevelCounter = 15
-		c.envelopeCounter = c.envelopePeriod()
+		c.envelopeCounter = c.envelopePeriod
 		c.envelopeStart = false
-	} else {
-		if 0 < c.envelopeCounter {
-			c.envelopeCounter -= 1
-		} else {
-			c.envelopeCounter = c.envelopePeriod()
-			if 0 < c.envelopeDecayLevelCounter {
-				c.envelopeDecayLevelCounter -= 1
-			} else if c.envelopeLoop() {
-				c.envelopeDecayLevelCounter = 15
-			}
-		}
+		return
+	}
+
+	if 0 < c.envelopeCounter {
+		c.envelopeCounter--
+		return
+	}
+
+	c.envelopeCounter = c.envelopePeriod
+	if 0 < c.envelopeDecayLevelCounter {
+		c.envelopeDecayLevelCounter--
+	} else if c.envelopeLoop {
+		c.envelopeDecayLevelCounter = 15
 	}
 }
 
@@ -96,16 +95,14 @@ func (c *noiseChannel) clockLengthCounter() {
 }
 
 func (c *noiseChannel) output() uint8 {
-	if util.NthBit(c.shiftRegister, 0) == 0 || c.lengthCounter == 0 {
+	if !c.enabled || c.shiftRegister&1 == 1 || c.lengthCounter == 0 {
 		return 0
 	}
-	var v uint8
-	if c.useConstantVolume() {
-		v = c.envelopePeriod()
+	if c.useConstantVolume {
+		return c.envelopePeriod
 	} else {
-		v = c.envelopeDecayLevelCounter
+		return c.envelopeDecayLevelCounter
 	}
-	return v & 0b1111
 }
 
 var noiseTimerPeriodTable = []uint16{

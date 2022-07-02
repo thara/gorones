@@ -13,7 +13,7 @@ func Test_pulse_write(t *testing.T) {
 		c.write(0x4000, 0b10111111)
 
 		assert.EqualValues(t, 0b10, c.dutyCycle)
-		assert.True(t, c.lengthCounter.halt)
+		assert.True(t, c.lengthCounterHalt)
 		assert.True(t, c.useConstantVolume)
 		assert.EqualValues(t, 0b1111, c.envelopePeriod)
 	})
@@ -33,7 +33,7 @@ func Test_pulse_write(t *testing.T) {
 		c.write(0x4003, 0b11101011)
 
 		assert.EqualValues(t, 0b011_00000100, c.timerPeriod)
-		assert.EqualValues(t, 28, c.lengthCounter.count)
+		assert.EqualValues(t, 28, c.lengthCounter)
 	})
 }
 
@@ -207,14 +207,14 @@ func Test_pulse_enable(t *testing.T) {
 		c.enabled = true
 		c.write(0x4003, 0b10101000)
 		// 1 0101 (21)
-		assert.EqualValues(t, 0x14, c.lengthCounter.count)
+		assert.EqualValues(t, 0x14, c.lengthCounter)
 	})
 	t.Run("disabled", func(t *testing.T) {
 		var c pulseChannel
 		c.enabled = false
-		before := c.lengthCounter.count
+		before := c.lengthCounter
 		c.write(0x4003, 0b11)
 		// 1 0101 (21)
-		assert.EqualValues(t, before, c.lengthCounter.count)
+		assert.EqualValues(t, before, c.lengthCounter)
 	})
 }

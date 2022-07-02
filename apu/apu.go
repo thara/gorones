@@ -83,9 +83,9 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 			a.noise.clockEnvelope()
 
 			if a.frameSequenceStep == 1 || a.frameSequenceStep == 3 {
-				a.pulse1.lengthCounter.clock()
+				a.pulse1.clockLengthCounter()
 				a.pulse1.clockSweepUnit()
-				a.pulse2.lengthCounter.clock()
+				a.pulse2.clockLengthCounter()
 				a.pulse2.clockSweepUnit()
 				a.triangle.lengthCounter.clock()
 				a.noise.lengthCounter.clock()
@@ -105,9 +105,9 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 			}
 
 			if a.frameSequenceStep == 1 || a.frameSequenceStep == 4 {
-				a.pulse1.lengthCounter.clock()
+				a.pulse1.clockLengthCounter()
 				a.pulse1.clockSweepUnit()
-				a.pulse2.lengthCounter.clock()
+				a.pulse2.clockLengthCounter()
 				a.pulse2.clockSweepUnit()
 				a.triangle.lengthCounter.clock()
 				a.noise.lengthCounter.clock()
@@ -126,6 +126,9 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 
 func (a *APU) sample() float32 {
 	p1 := float32(a.pulse1.output())
+	// if 0 < p1 {
+	// 	fmt.Print(p1)
+	// }
 	p2 := float32(a.pulse2.output())
 	triangle := float32(a.triangle.output())
 	noise := float32(a.noise.output())
@@ -183,10 +186,10 @@ func (a *Port) Read(addr uint16) uint8 {
 		if 0 < a.apu.triangle.lengthCounter.count {
 			value |= 0x04
 		}
-		if 0 < a.apu.pulse2.lengthCounter.count {
+		if 0 < a.apu.pulse2.lengthCounter {
 			value |= 0x02
 		}
-		if 0 < a.apu.pulse1.lengthCounter.count {
+		if 0 < a.apu.pulse1.lengthCounter {
 			value |= 0x01
 		}
 
@@ -199,7 +202,7 @@ func (a *Port) Read(addr uint16) uint8 {
 }
 
 func (a *Port) Write(addr uint16, value uint8) {
-	fmt.Printf("write %04x, %b\n", addr, value)
+	fmt.Printf("write %04x, %08b\n", addr, value)
 	switch {
 	case 0x4000 <= addr && addr <= 0x4003:
 		a.apu.pulse1.write(addr, value)
@@ -223,16 +226,16 @@ func (a *Port) Write(addr uint16, value uint8) {
 		a.apu.noise.enabled = value&8 == 8
 		a.apu.dmc.enabled = value&16 == 16
 
-		if a.apu.pulse1.enabled {
-			a.apu.pulse1.lengthCounter.reset()
+		if !a.apu.pulse1.enabled {
+			a.apu.pulse1.lengthCounter = 0
 		}
-		if a.apu.pulse2.enabled {
-			a.apu.pulse2.lengthCounter.reset()
+		if !a.apu.pulse2.enabled {
+			a.apu.pulse2.lengthCounter = 0
 		}
-		if a.apu.triangle.enabled {
+		if !a.apu.triangle.enabled {
 			a.apu.triangle.lengthCounter.reset()
 		}
-		if a.apu.noise.enabled {
+		if !a.apu.noise.enabled {
 			a.apu.noise.lengthCounter.reset()
 		}
 	case addr == 0x4017:
@@ -249,3 +252,8 @@ const (
 	frameSequenceMode4Step
 	frameSequenceMode5Step
 )
+
+var lengthTable = [32]uint8{
+	10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
+	12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30,
+}

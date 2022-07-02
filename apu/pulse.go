@@ -9,15 +9,13 @@ type pulseChannel struct {
 	useConstantVolume bool
 	envelopePeriod    uint8
 
-	sweep        uint8
 	sweepEnabled bool
 	sweepPeriod  uint8
 	sweepNegate  bool
 	sweepShift   uint8
 
-	high uint8
-
-	lengthCounter lengthCounter
+	lengthCounter     uint8
+	lengthCounterHalt bool
 
 	timerCounter   uint16
 	timerSequencer int
@@ -47,12 +45,12 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	case 0x4000, 0x4004:
 		c.volume = value
 		c.dutyCycle = value >> 6
-		c.lengthCounter.halt = (value>>5)&1 == 0
+		c.lengthCounterHalt = (value>>5)&1 == 1
 		c.envelopeLoop = (value>>5)&1 == 1
 		c.useConstantVolume = (value>>4)&1 == 1
 		c.envelopePeriod = value & 0b1111
+		// c.envelopeStart = true
 	case 0x4001, 0x4005:
-		c.sweep = value
 		c.sweepEnabled = (value>>7)&1 == 1
 		c.sweepPeriod = (value >> 4) & 0b111
 		c.sweepNegate = (value>>3)&1 == 1
@@ -61,9 +59,8 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	case 0x4002, 0x4006:
 		c.timerPeriod = uint16(value) | (c.timerPeriod & 0xFF00)
 	case 0x4003, 0x4007:
-		c.high = value
 		if c.enabled {
-			c.lengthCounter.reload(value >> 3)
+			c.lengthCounter = lengthTable[value>>3]
 		}
 		c.timerPeriod = (c.timerPeriod & 0x00FF) | (uint16(value&7) << 8)
 		c.timerSequencer = 0
@@ -92,21 +89,21 @@ func (c *pulseChannel) clockEnvelope() {
 	}
 
 	if 0 < c.envelopeCounter {
-		c.envelopeCounter -= 1
+		c.envelopeCounter--
 		return
 	}
 
 	c.envelopeCounter = c.envelopePeriod
 	if 0 < c.envelopeDecayLevelCounter {
-		c.envelopeDecayLevelCounter -= 1
-	} else if c.envelopeDecayLevelCounter == 0 && c.envelopeLoop {
+		c.envelopeDecayLevelCounter--
+	} else if c.envelopeLoop {
 		c.envelopeDecayLevelCounter = 15
 	}
 }
 
 func (c *pulseChannel) clockSweepUnit() {
-	// Updating the period
 	if c.sweepCounter == 0 && c.sweepEnabled && c.sweepShift != 0 && !c.sweepUnitMuted() {
+		// Updating the period
 		delta := c.timerPeriod >> c.sweepShift
 		if c.sweepNegate {
 			c.timerPeriod -= delta
@@ -118,23 +115,28 @@ func (c *pulseChannel) clockSweepUnit() {
 		}
 	}
 
-	if c.sweepCounter == 0 || c.sweepReload {
-		c.sweepCounter = c.sweepPeriod
+	if c.sweepReload || c.sweepCounter == 0 {
 		c.sweepReload = false
+		c.sweepCounter = c.sweepPeriod
 	} else {
-		c.sweepCounter -= 1
+		c.sweepCounter--
+	}
+}
+
+func (c *pulseChannel) clockLengthCounter() {
+	if !c.lengthCounterHalt && 0 < c.lengthCounter {
+		c.lengthCounter--
 	}
 }
 
 func (c *pulseChannel) output() uint8 {
-	if !c.enabled || c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle][c.timerSequencer] == 0 {
+	if c.lengthCounter == 0 || dutyTable[c.dutyCycle][c.timerSequencer] == 0 || c.sweepUnitMuted() {
 		return 0
 	}
 	if c.useConstantVolume {
 		return c.envelopePeriod
-	} else {
-		return c.envelopeDecayLevelCounter
 	}
+	return c.envelopeDecayLevelCounter
 }
 
 var dutyTable [4][8]uint8 = [4][8]uint8{

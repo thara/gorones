@@ -68,6 +68,13 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	}
 }
 
+func (c *pulseChannel) setEnabled(v bool) {
+	c.enabled = v
+	if !v {
+		c.lengthCounter = 0
+	}
+}
+
 func (c *pulseChannel) clockTimer() {
 	if 0 < c.timerCounter {
 		c.timerCounter -= 1

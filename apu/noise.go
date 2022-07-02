@@ -17,7 +17,8 @@ type noiseChannel struct {
 	timerCounter uint16
 	timerPeriod  uint16
 
-	lengthCounter lengthCounter
+	lengthCounter     uint8
+	lengthCounterHalt bool
 }
 
 func (c *noiseChannel) envelopeLoop() bool      { return util.IsSet(c.envelope, 5) }
@@ -31,15 +32,22 @@ func (c *noiseChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x400C:
 		c.envelope = value
-		c.lengthCounter.halt = util.IsSet(c.envelope, 5)
+		c.lengthCounterHalt = (value>>5)&1 == 1
 	case 0x400E:
 		c.period = value
 		c.timerPeriod = noiseTimerPeriodTable[c.timerEntry()]
 	case 0x400F:
 		if c.enabled {
-			c.lengthCounter.reload((value & 0b11111000) >> 3)
+			c.lengthCounter = lengthTable[(value&0b11111000)>>3]
 		}
 		c.envelopeStart = true
+	}
+}
+
+func (c *noiseChannel) setEnabled(v bool) {
+	c.enabled = v
+	if !v {
+		c.lengthCounter = 0
 	}
 }
 
@@ -81,8 +89,14 @@ func (c *noiseChannel) clockEnvelope() {
 	}
 }
 
+func (c *noiseChannel) clockLengthCounter() {
+	if !c.lengthCounterHalt && 0 < c.lengthCounter {
+		c.lengthCounter--
+	}
+}
+
 func (c *noiseChannel) output() uint8 {
-	if util.NthBit(c.shiftRegister, 0) == 0 || c.lengthCounter.count == 0 {
+	if util.NthBit(c.shiftRegister, 0) == 0 || c.lengthCounter == 0 {
 		return 0
 	}
 	var v uint8

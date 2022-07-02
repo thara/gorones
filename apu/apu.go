@@ -87,8 +87,8 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 				a.pulse1.clockSweepUnit()
 				a.pulse2.clockLengthCounter()
 				a.pulse2.clockSweepUnit()
-				a.triangle.lengthCounter.clock()
-				a.noise.lengthCounter.clock()
+				a.triangle.clockLengthCounter()
+				a.noise.clockLengthCounter()
 			}
 
 			if a.frameSequenceStep == 3 && !a.frameInterruptInhibit() {
@@ -109,8 +109,8 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 				a.pulse1.clockSweepUnit()
 				a.pulse2.clockLengthCounter()
 				a.pulse2.clockSweepUnit()
-				a.triangle.lengthCounter.clock()
-				a.noise.lengthCounter.clock()
+				a.triangle.clockLengthCounter()
+				a.noise.clockLengthCounter()
 			}
 
 			a.frameSequenceStep = (a.frameSequenceStep + 1) % 5
@@ -180,10 +180,10 @@ func (a *Port) Read(addr uint16) uint8 {
 		if 0 < a.apu.dmc.bytesRemainingCounter {
 			value |= 0x20
 		}
-		if 0 < a.apu.noise.lengthCounter.count {
+		if 0 < a.apu.noise.lengthCounter {
 			value |= 0x08
 		}
-		if 0 < a.apu.triangle.lengthCounter.count {
+		if 0 < a.apu.triangle.lengthCounter {
 			value |= 0x04
 		}
 		if 0 < a.apu.pulse2.lengthCounter {
@@ -220,24 +220,12 @@ func (a *Port) Write(addr uint16, value uint8) {
 		a.apu.dmc.write(addr, value)
 
 	case addr == 0x4015:
-		a.apu.pulse1.enabled = value&1 == 1
-		a.apu.pulse2.enabled = value&2 == 2
-		a.apu.triangle.enabled = value&4 == 4
-		a.apu.noise.enabled = value&8 == 8
-		a.apu.dmc.enabled = value&16 == 16
+		a.apu.pulse1.setEnabled(value&1 == 1)
+		a.apu.pulse2.setEnabled(value&2 == 2)
+		a.apu.triangle.setEnabled(value&4 == 4)
+		a.apu.noise.setEnabled(value&8 == 8)
 
-		if !a.apu.pulse1.enabled {
-			a.apu.pulse1.lengthCounter = 0
-		}
-		if !a.apu.pulse2.enabled {
-			a.apu.pulse2.lengthCounter = 0
-		}
-		if !a.apu.triangle.enabled {
-			a.apu.triangle.lengthCounter.reset()
-		}
-		if !a.apu.noise.enabled {
-			a.apu.noise.lengthCounter.reset()
-		}
+		a.apu.dmc.enabled = value&16 == 16
 	case addr == 0x4017:
 		a.apu.frameCounterControl = value
 	default:

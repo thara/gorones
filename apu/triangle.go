@@ -18,7 +18,8 @@ type triangleChannel struct {
 
 	linearCounter uint8
 
-	lengthCounter lengthCounter
+	lengthCounter     uint8
+	lengthCounterHalt bool
 }
 
 func (c *triangleChannel) controlFlag() bool          { return util.IsSet(c.linearCounterSetup, 7) }
@@ -34,17 +35,22 @@ func (c *triangleChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x4008:
 		c.linearCounterSetup = value
-		c.lengthCounter.halt = util.IsSet(c.linearCounterSetup, 7)
+		c.lengthCounterHalt = (value>>7)&1 == 1
 	case 0x400A:
 		c.low = value
 	case 0x400B:
 		c.high = value
 		c.linearCounterReloadFlag = true
 		if c.enabled {
-			c.lengthCounter.reload(c.lengthCounterLoad())
+			c.lengthCounter = lengthTable[c.lengthCounterLoad()]
 		}
-	default:
-		break
+	}
+}
+
+func (c *triangleChannel) setEnabled(v bool) {
+	c.enabled = v
+	if !v {
+		c.lengthCounter = 0
 	}
 }
 
@@ -53,7 +59,7 @@ func (c *triangleChannel) clockTimer() {
 		c.timerCounter -= 1
 	} else {
 		c.timerCounter = c.timerReload()
-		if 0 < c.linearCounter && 0 < c.lengthCounter.count {
+		if 0 < c.linearCounter && 0 < c.lengthCounter {
 			c.sequencer += 1
 			if c.sequencer == 32 {
 				c.sequencer = 0
@@ -74,8 +80,14 @@ func (c *triangleChannel) clockLinearCounter() {
 	}
 }
 
+func (c *triangleChannel) clockLengthCounter() {
+	if !c.lengthCounterHalt && 0 < c.lengthCounter {
+		c.lengthCounter--
+	}
+}
+
 func (c *triangleChannel) output() uint8 {
-	if !c.enabled || c.controlFlag() || c.lengthCounter.count == 0 || c.linearCounter == 0 {
+	if !c.enabled || c.controlFlag() || c.lengthCounter == 0 || c.linearCounter == 0 {
 		return 0
 	}
 	// 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0

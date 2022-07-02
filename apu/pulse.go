@@ -107,16 +107,15 @@ func (c *pulseChannel) clockEnvelope() {
 func (c *pulseChannel) clockSweepUnit() {
 	// Updating the period
 	if c.sweepCounter == 0 && c.sweepEnabled && c.sweepShift != 0 && !c.sweepUnitMuted() {
-		var changeAmount = c.timerPeriod >> c.sweepShift
+		delta := c.timerPeriod >> c.sweepShift
 		if c.sweepNegate {
-			switch c.carryMode {
-			case sweepOneComplement:
-				changeAmount = ^changeAmount
-			case sweepTwoComplement:
-				changeAmount = ^changeAmount + 1
+			c.timerPeriod -= delta
+			if c.carryMode == sweepOneComplement {
+				c.timerPeriod--
 			}
+		} else {
+			c.timerPeriod += delta
 		}
-		c.timerPeriod += changeAmount
 	}
 
 	if c.sweepCounter == 0 || c.sweepReload {

@@ -79,7 +79,7 @@ func (c *triangleChannel) output() uint8 {
 	if !c.enabled || c.controlFlag || c.lengthCounter == 0 || c.linearCounter == 0 {
 		return 0
 	}
-	return sequencerTable[c.sequencer]
+	return sequencerTable[c.sequencer] & 0xF
 }
 
 var sequencerTable = [32]uint8{

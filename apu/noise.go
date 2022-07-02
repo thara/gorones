@@ -99,9 +99,9 @@ func (c *noiseChannel) output() uint8 {
 		return 0
 	}
 	if c.useConstantVolume {
-		return c.envelopePeriod
+		return c.envelopePeriod & 0xF
 	} else {
-		return c.envelopeDecayLevelCounter
+		return c.envelopeDecayLevelCounter & 0xF
 	}
 }
 

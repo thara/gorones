@@ -137,7 +137,7 @@ func (c *pulseChannel) output() uint8 {
 	} else {
 		volume = c.envelopeDecayLevelCounter
 	}
-	return volume & 0b1111
+	return volume
 }
 
 var dutyTable [4][8]uint8 = [4][8]uint8{

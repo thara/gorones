@@ -54,18 +54,18 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	case 0x4001, 0x4005:
 		c.sweep = value
 		c.sweepEnabled = (value>>7)&1 == 1
-		c.sweepPeriod = (value & 0b01110000) >> 4
+		c.sweepPeriod = (value >> 4) & 0b111
 		c.sweepNegate = (value>>3)&1 == 1
 		c.sweepShift = value & 0b111
 		c.sweepReload = true
 	case 0x4002, 0x4006:
-		c.timerPeriod = uint16(value) | (uint16(c.timerPeriod&0xFF00) << 8)
+		c.timerPeriod = uint16(value) | (c.timerPeriod & 0xFF00)
 	case 0x4003, 0x4007:
 		c.high = value
 		if c.enabled {
 			c.lengthCounter.reload(value >> 3)
 		}
-		c.timerPeriod = c.timerPeriod&0x00FF | (uint16(value&7) << 8)
+		c.timerPeriod = (c.timerPeriod & 0x00FF) | (uint16(value&7) << 8)
 		c.timerSequencer = 0
 		c.envelopeStart = true
 	}

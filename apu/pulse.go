@@ -131,13 +131,11 @@ func (c *pulseChannel) output() uint8 {
 	if !c.enabled || c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle][c.timerSequencer] == 0 {
 		return 0
 	}
-	var volume uint8
 	if c.useConstantVolume {
-		volume = c.envelopePeriod
+		return c.envelopePeriod
 	} else {
-		volume = c.envelopeDecayLevelCounter
+		return c.envelopeDecayLevelCounter
 	}
-	return volume
 }
 
 var dutyTable [4][8]uint8 = [4][8]uint8{

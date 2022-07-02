@@ -49,7 +49,7 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 		c.envelopeLoop = (value>>5)&1 == 1
 		c.useConstantVolume = (value>>4)&1 == 1
 		c.envelopePeriod = value & 0b1111
-		// c.envelopeStart = true
+		c.envelopeStart = true
 	case 0x4001, 0x4005:
 		c.sweepEnabled = (value>>7)&1 == 1
 		c.sweepPeriod = (value >> 4) & 0b111

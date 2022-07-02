@@ -1,15 +1,12 @@
 package apu
 
-import (
-	"github.com/thara/gorones/util"
-)
-
 type triangleChannel struct {
 	enabled bool
 
-	linearCounterSetup uint8
-	low                uint8
-	high               uint8
+	controlFlag         bool
+	linearCounterReload uint8
+
+	timerPeriod uint16
 
 	linearCounterReloadFlag bool
 
@@ -22,27 +19,19 @@ type triangleChannel struct {
 	lengthCounterHalt bool
 }
 
-func (c *triangleChannel) controlFlag() bool          { return util.IsSet(c.linearCounterSetup, 7) }
-func (c *triangleChannel) linearCounterReload() uint8 { return c.linearCounterSetup & 0b01111111 }
-
-func (c *triangleChannel) timerLow() uint8          { return c.low }
-func (c *triangleChannel) timerHigh() uint8         { return c.high & 0b111 }
-func (c *triangleChannel) lengthCounterLoad() uint8 { return (c.high & 0b11111000) >> 3 }
-
-func (c *triangleChannel) timerReload() uint16 { return uint16(c.low) | (uint16(c.timerHigh()) << 8) }
-
 func (c *triangleChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x4008:
-		c.linearCounterSetup = value
+		c.controlFlag = (value>>7)&1 == 1
+		c.linearCounterReload = value & 0b01111111
 		c.lengthCounterHalt = (value>>7)&1 == 1
 	case 0x400A:
-		c.low = value
+		c.timerPeriod = uint16(value) | (c.timerPeriod & 0xFF00)
 	case 0x400B:
-		c.high = value
+		c.timerPeriod = (c.timerPeriod & 0x00FF) | (uint16(value&7) << 8)
 		c.linearCounterReloadFlag = true
 		if c.enabled {
-			c.lengthCounter = lengthTable[c.lengthCounterLoad()]
+			c.lengthCounter = lengthTable[(value&0b11111000)>>3]
 		}
 	}
 }
@@ -58,7 +47,7 @@ func (c *triangleChannel) clockTimer() {
 	if 0 < c.timerCounter {
 		c.timerCounter -= 1
 	} else {
-		c.timerCounter = c.timerReload()
+		c.timerCounter = c.timerPeriod
 		if 0 < c.linearCounter && 0 < c.lengthCounter {
 			c.sequencer += 1
 			if c.sequencer == 32 {
@@ -70,12 +59,12 @@ func (c *triangleChannel) clockTimer() {
 
 func (c *triangleChannel) clockLinearCounter() {
 	if c.linearCounterReloadFlag {
-		c.linearCounter = c.linearCounterReload()
+		c.linearCounter = c.linearCounterReload
 	} else {
 		c.linearCounter -= 1
 	}
 
-	if c.controlFlag() {
+	if c.controlFlag {
 		c.linearCounterReloadFlag = false
 	}
 }
@@ -87,7 +76,7 @@ func (c *triangleChannel) clockLengthCounter() {
 }
 
 func (c *triangleChannel) output() uint8 {
-	if !c.enabled || c.controlFlag() || c.lengthCounter == 0 || c.linearCounter == 0 {
+	if !c.enabled || c.controlFlag || c.lengthCounter == 0 || c.linearCounter == 0 {
 		return 0
 	}
 	// 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0

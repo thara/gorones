@@ -1,16 +1,21 @@
 package apu
 
-import (
-	"github.com/thara/gorones/util"
-)
-
 type pulseChannel struct {
 	enabled bool
 
-	volume uint8
-	sweep  uint8
-	low    uint8
-	high   uint8
+	volume            uint8
+	dutyCycle         uint8
+	envelopeLoop      bool
+	useConstantVolume bool
+	envelopePeriod    uint8
+
+	sweep        uint8
+	sweepEnabled bool
+	sweepPeriod  uint8
+	sweepNegate  bool
+	sweepShift   uint8
+
+	high uint8
 
 	lengthCounter lengthCounter
 
@@ -35,40 +40,32 @@ const (
 	sweepTwoComplement                 = 1
 )
 
-func (c *pulseChannel) dutyCycle() int { return int(c.volume >> 6) }
-
-func (c *pulseChannel) envelopeLoop() bool      { return util.IsSet(c.volume, 5) }
-func (c *pulseChannel) useConstantVolume() bool { return util.IsSet(c.volume, 4) }
-func (c *pulseChannel) envelopePeriod() uint8   { return c.volume & 0b1111 }
-
-func (c *pulseChannel) sweepEnabled() bool   { return util.IsSet(c.sweep, 7) }
-func (c *pulseChannel) sweepPeriod() uint8   { return (c.sweep & 0b01110000) >> 4 }
-func (c *pulseChannel) sweepNegate() bool    { return util.IsSet(c.sweep, 3) }
-func (c *pulseChannel) sweepShift() uint8    { return c.sweep & 0b111 }
 func (c *pulseChannel) sweepUnitMuted() bool { return c.timerPeriod < 8 || 0x7FF < c.timerPeriod }
-
-func (c *pulseChannel) timerHigh() uint8         { return c.high & 0b111 }
-func (c *pulseChannel) lengthCounterLoad() uint8 { return (c.high & 0b11111000) >> 3 }
-
-func (c *pulseChannel) timerReload() uint16 { return uint16(c.low) | (uint16(c.timerHigh()) << 8) }
 
 func (c *pulseChannel) write(addr uint16, value uint8) {
 	switch addr {
 	case 0x4000, 0x4004:
 		c.volume = value
-		c.lengthCounter.halt = util.IsSet(c.volume, 5)
+		c.dutyCycle = c.volume >> 6
+		c.lengthCounter.halt = (value>>5)&1 == 1
+		c.envelopeLoop = (value>>5)&1 == 1
+		c.useConstantVolume = (value>>4)&1 == 1
+		c.envelopePeriod = c.volume & 0b1111
 	case 0x4001, 0x4005:
 		c.sweep = value
+		c.sweepEnabled = (value>>7)&1 == 1
+		c.sweepPeriod = (c.sweep & 0b01110000) >> 4
+		c.sweepNegate = (value>>3)&1 == 1
+		c.sweepShift = c.sweep & 0b111
 		c.sweepReload = true
 	case 0x4002, 0x4006:
-		c.low = value
-		c.timerPeriod = c.timerReload()
+		c.timerPeriod = uint16(value) | (uint16(c.timerPeriod&0xFF00) << 8)
 	case 0x4003, 0x4007:
 		c.high = value
 		if c.enabled {
-			c.lengthCounter.reload(c.lengthCounterLoad())
+			c.lengthCounter.reload(value >> 3)
 		}
-		c.timerPeriod = c.timerReload()
+		c.timerPeriod = c.timerPeriod&0x00FF | (uint16(value&7) << 8)
 		c.timerSequencer = 0
 		c.envelopeStart = true
 	}
@@ -78,7 +75,7 @@ func (c *pulseChannel) clockTimer() {
 	if 0 < c.timerCounter {
 		c.timerCounter -= 1
 	} else {
-		c.timerCounter = c.timerReload()
+		c.timerCounter = c.timerPeriod
 		c.timerSequencer += 1
 		if c.timerSequencer == 8 {
 			c.timerSequencer = 0
@@ -89,7 +86,7 @@ func (c *pulseChannel) clockTimer() {
 func (c *pulseChannel) clockEnvelope() {
 	if c.envelopeStart {
 		c.envelopeDecayLevelCounter = 15
-		c.envelopeCounter = c.envelopePeriod()
+		c.envelopeCounter = c.envelopePeriod
 		c.envelopeStart = false
 		return
 	}
@@ -99,19 +96,19 @@ func (c *pulseChannel) clockEnvelope() {
 		return
 	}
 
-	c.envelopeCounter = c.envelopePeriod()
+	c.envelopeCounter = c.envelopePeriod
 	if 0 < c.envelopeDecayLevelCounter {
 		c.envelopeDecayLevelCounter -= 1
-	} else if c.envelopeDecayLevelCounter == 0 && c.envelopeLoop() {
+	} else if c.envelopeDecayLevelCounter == 0 && c.envelopeLoop {
 		c.envelopeDecayLevelCounter = 15
 	}
 }
 
 func (c *pulseChannel) clockSweepUnit() {
 	// Updating the period
-	if c.sweepCounter == 0 && c.sweepEnabled() && c.sweepShift() != 0 && !c.sweepUnitMuted() {
-		var changeAmount = c.timerPeriod >> c.sweepShift()
-		if c.sweepNegate() {
+	if c.sweepCounter == 0 && c.sweepEnabled && c.sweepShift != 0 && !c.sweepUnitMuted() {
+		var changeAmount = c.timerPeriod >> c.sweepShift
+		if c.sweepNegate {
 			switch c.carryMode {
 			case sweepOneComplement:
 				changeAmount = ^changeAmount
@@ -123,7 +120,7 @@ func (c *pulseChannel) clockSweepUnit() {
 	}
 
 	if c.sweepCounter == 0 || c.sweepReload {
-		c.sweepCounter = c.sweepPeriod()
+		c.sweepCounter = c.sweepPeriod
 		c.sweepReload = false
 	} else {
 		c.sweepCounter -= 1
@@ -131,12 +128,12 @@ func (c *pulseChannel) clockSweepUnit() {
 }
 
 func (c *pulseChannel) output() uint8 {
-	if !c.enabled || c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle()][c.timerSequencer] == 0 {
+	if !c.enabled || c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle][c.timerSequencer] == 0 {
 		return 0
 	}
 	var volume uint8
-	if c.useConstantVolume() {
-		volume = c.envelopePeriod()
+	if c.useConstantVolume {
+		volume = c.envelopePeriod
 	} else {
 		volume = c.envelopeDecayLevelCounter
 	}

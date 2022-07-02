@@ -12,33 +12,35 @@ func Test_pulse_write(t *testing.T) {
 		var c pulseChannel
 		c.write(0x4000, 0b10111111)
 
-		assert.EqualValues(t, 0b10, c.dutyCycle())
+		assert.EqualValues(t, 0b10, c.dutyCycle)
 		assert.True(t, c.lengthCounter.halt)
-		assert.True(t, c.useConstantVolume())
-		assert.EqualValues(t, 0b1111, c.envelopePeriod())
+		assert.True(t, c.useConstantVolume)
+		assert.EqualValues(t, 0b1111, c.envelopePeriod)
 	})
 	t.Run("0x4001", func(t *testing.T) {
 		var c pulseChannel
 		c.write(0x4001, 0b10101011)
 
-		assert.True(t, c.sweepEnabled())
-		assert.EqualValues(t, 0b010, c.sweepPeriod())
-		assert.True(t, c.sweepNegate())
-		assert.EqualValues(t, 0b011, c.sweepShift())
+		assert.True(t, c.sweepEnabled)
+		assert.EqualValues(t, 0b010, c.sweepPeriod)
+		assert.True(t, c.sweepNegate)
+		assert.EqualValues(t, 0b011, c.sweepShift)
 	})
 	t.Run("0x4002 & 0x4003", func(t *testing.T) {
 		var c pulseChannel
+		c.enabled = true
 		c.write(0x4002, 0b00000100)
-		c.write(0x4003, 0b11111011)
+		c.write(0x4003, 0b11101011)
 
-		assert.EqualValues(t, 0b011_00000100, c.timerReload())
-		assert.EqualValues(t, 0b11111, c.lengthCounterLoad())
+		assert.EqualValues(t, 0b011_00000100, c.timerPeriod)
+		assert.EqualValues(t, 28, c.lengthCounter.count)
 	})
 }
 
 func Test_pulse_clockTimer(t *testing.T) {
 	t.Run("counter is greater than zero", func(t *testing.T) {
-		c := pulseChannel{low: 0b11, timerCounter: 3}
+		c := pulseChannel{timerCounter: 3}
+		c.write(0x4002, 0b11) // timer low
 		c.clockTimer()
 		assert.EqualValues(t, 2, c.timerCounter)
 	})
@@ -51,7 +53,8 @@ func Test_pulse_clockTimer(t *testing.T) {
 
 	t.Run("counter is zero", func(t *testing.T) {
 		t.Run("reloads timerCounter and increments sequencer", func(t *testing.T) {
-			c := pulseChannel{low: 0b11, timerCounter: 3}
+			c := pulseChannel{timerCounter: 3}
+			c.write(0x4002, 0b11) // timer low
 			setup(&c)
 			before := c.timerSequencer
 			c.clockTimer()
@@ -61,7 +64,8 @@ func Test_pulse_clockTimer(t *testing.T) {
 		})
 
 		t.Run("if sequencer become over 8", func(t *testing.T) {
-			c := pulseChannel{low: 0b11, timerCounter: 3}
+			c := pulseChannel{timerCounter: 3}
+			c.write(0x4002, 0b11) // timer low
 			setup(&c)
 			c.timerSequencer = 7
 			c.clockTimer()
@@ -73,18 +77,20 @@ func Test_pulse_clockTimer(t *testing.T) {
 
 func Test_pulse_clockEnvelope(t *testing.T) {
 	t.Run("start is on", func(t *testing.T) {
-		c := pulseChannel{volume: 0b111, envelopeStart: true}
+		c := pulseChannel{envelopeStart: true}
+		c.write(0x4000, 0b111) // volume
 		c.clockEnvelope()
 
 		assert.EqualValues(t, 15, c.envelopeDecayLevelCounter)
-		assert.EqualValues(t, c.envelopePeriod(), c.envelopeCounter)
+		assert.EqualValues(t, c.envelopePeriod, c.envelopeCounter)
 		assert.False(t, c.envelopeStart)
 	})
 
 	t.Run("start is off", func(t *testing.T) {
 		t.Run("envelope's counter is greater than zero after clocked", func(t *testing.T) {
-			c := pulseChannel{volume: 0b111}
-			c.envelopeCounter = c.envelopePeriod()
+			c := pulseChannel{}
+			c.write(0x4000, 0b111) // volume
+			c.envelopeCounter = c.envelopePeriod
 
 			before := c.envelopeCounter
 			c.clockEnvelope()
@@ -93,21 +99,24 @@ func Test_pulse_clockEnvelope(t *testing.T) {
 		})
 		t.Run("envelope's counter is zero after clocked", func(t *testing.T) {
 			t.Run("reloads envelope's counter", func(t *testing.T) {
-				c := pulseChannel{volume: 0b111, envelopeCounter: 0}
+				c := pulseChannel{envelopeCounter: 0}
+				c.write(0x4000, 0b111) // volume
 
 				c.clockEnvelope()
-				assert.EqualValues(t, c.envelopePeriod(), c.envelopeCounter)
+				assert.EqualValues(t, c.envelopePeriod, c.envelopeCounter)
 			})
 			t.Run("envelope's decayLevelCounter become to be greater than 0 after clocked", func(t *testing.T) {
-				c := pulseChannel{volume: 0b111, envelopeDecayLevelCounter: 2}
+				c := pulseChannel{envelopeDecayLevelCounter: 2}
+				c.write(0x4000, 0b111) // volume
 
 				before := c.envelopeDecayLevelCounter
 				c.clockEnvelope()
 				assert.EqualValues(t, before-1, c.envelopeDecayLevelCounter)
 			})
 			t.Run("envelope's decayLevelCounter become 0 after clocked", func(t *testing.T) {
-				c := pulseChannel{volume: 0b100000}
-				c.envelopeCounter = c.envelopePeriod()
+				c := pulseChannel{}
+				c.write(0x4000, 0b100000) // volume
+				c.envelopeCounter = c.envelopePeriod
 				c.clockEnvelope()
 				assert.EqualValues(t, 15, c.envelopeDecayLevelCounter)
 			})
@@ -136,30 +145,34 @@ func Test_pulse_sweepUnitMuted(t *testing.T) {
 
 func Test_pulse_clockSweepUnit(t *testing.T) {
 	t.Run("sweep unit counter is not 0", func(t *testing.T) {
-		c := pulseChannel{carryMode: sweepOneComplement, sweep: 0b10101000, sweepCounter: 3}
+		c := pulseChannel{carryMode: sweepOneComplement, sweepCounter: 3}
+		c.write(0x4001, 0b10101000) // sweep
 
 		before := c.sweepCounter
 		c.clockSweepUnit()
 		assert.Equal(t, before-1, c.sweepCounter)
 	})
 	t.Run("sweep unit counter is 0", func(t *testing.T) {
-		c := pulseChannel{carryMode: sweepOneComplement, sweep: 0b10101000, sweepCounter: 0, sweepReload: true}
+		c := pulseChannel{carryMode: sweepOneComplement, sweepCounter: 0, sweepReload: true}
+		c.write(0x4001, 0b10101000) // sweep
 
 		c.clockSweepUnit()
-		assert.Equal(t, c.sweepPeriod(), c.sweepCounter)
+		assert.Equal(t, c.sweepPeriod, c.sweepCounter)
 		assert.False(t, c.sweepReload)
 	})
 	t.Run("sweep unit reload is true", func(t *testing.T) {
-		c := pulseChannel{carryMode: sweepOneComplement, sweep: 0b10101000, sweepCounter: 1, sweepReload: true}
+		c := pulseChannel{carryMode: sweepOneComplement, sweepCounter: 1, sweepReload: true}
+		c.write(0x4001, 0b10101000) // sweep
 
 		c.clockSweepUnit()
-		assert.Equal(t, c.sweepPeriod(), c.sweepCounter)
+		assert.Equal(t, c.sweepPeriod, c.sweepCounter)
 		assert.False(t, c.sweepReload)
 	})
 	t.Run("sweep unit counter is zero and enabled and not muted", func(t *testing.T) {
 		t.Run("reloads sweep unit counter and clear reload flag", func(t *testing.T) {
 			// not muted
-			c := pulseChannel{carryMode: sweepOneComplement, sweep: 0b10000001, timerPeriod: 0b1000}
+			c := pulseChannel{carryMode: sweepOneComplement, timerPeriod: 0b1000}
+			c.write(0x4001, 0b10000001) // sweep
 
 			before := c.timerPeriod
 			c.clockSweepUnit()
@@ -167,7 +180,8 @@ func Test_pulse_clockSweepUnit(t *testing.T) {
 		})
 		t.Run("if negated with one's complement", func(t *testing.T) {
 			// negate = true, shift count = 2
-			c := pulseChannel{carryMode: sweepOneComplement, sweep: 0b10101010, timerPeriod: 0b101010010}
+			c := pulseChannel{carryMode: sweepOneComplement, timerPeriod: 0b101010010}
+			c.write(0x4001, 0b10101010) // sweep
 			c.clockSweepUnit()
 			// 0b101010010 >> 2 -> 0b1010100
 			// 0b1010100 * -1 - 1 -> -85
@@ -176,7 +190,8 @@ func Test_pulse_clockSweepUnit(t *testing.T) {
 		})
 		t.Run("if negated with two's complement", func(t *testing.T) {
 			// negate = true, shift count = 2
-			c := pulseChannel{carryMode: sweepTwoComplement, sweep: 0b10101010, timerPeriod: 0b101010010}
+			c := pulseChannel{carryMode: sweepTwoComplement, timerPeriod: 0b101010010}
+			c.write(0x4001, 0b10101010) // sweep
 			c.clockSweepUnit()
 			// 0b101010010 >> 2 -> 0b1010100
 			// 0b1010100 * -1 -> -84

@@ -1,12 +1,12 @@
 package apu
 
 import (
-	"fmt"
-
 	"github.com/thara/gorones/util"
 )
 
 type pulseChannel struct {
+	enabled bool
+
 	volume uint8
 	sweep  uint8
 	low    uint8
@@ -65,8 +65,9 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 		c.timerPeriod = c.timerReload()
 	case 0x4003, 0x4007:
 		c.high = value
-		c.lengthCounter.reload(c.lengthCounterLoad())
-		fmt.Printf("pulse %04x %b %#v %d\n", addr, value, c.lengthCounter, c.lengthCounterLoad())
+		if c.enabled {
+			c.lengthCounter.reload(c.lengthCounterLoad())
+		}
 		c.timerPeriod = c.timerReload()
 		c.timerSequencer = 0
 		c.envelopeStart = true
@@ -130,7 +131,7 @@ func (c *pulseChannel) clockSweepUnit() {
 }
 
 func (c *pulseChannel) output() uint8 {
-	if c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle()][c.timerSequencer] == 0 {
+	if !c.enabled || c.lengthCounter.count == 0 || c.sweepUnitMuted() || dutyTable[c.dutyCycle()][c.timerSequencer] == 0 {
 		return 0
 	}
 	var volume uint8

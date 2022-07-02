@@ -5,6 +5,8 @@ import (
 )
 
 type triangleChannel struct {
+	enabled bool
+
 	linearCounterSetup uint8
 	low                uint8
 	high               uint8
@@ -38,7 +40,9 @@ func (c *triangleChannel) write(addr uint16, value uint8) {
 	case 0x400B:
 		c.high = value
 		c.linearCounterReloadFlag = true
-		c.lengthCounter.reload(c.lengthCounterLoad())
+		if c.enabled {
+			c.lengthCounter.reload(c.lengthCounterLoad())
+		}
 	default:
 		break
 	}
@@ -71,7 +75,7 @@ func (c *triangleChannel) clockLinearCounter() {
 }
 
 func (c *triangleChannel) output() uint8 {
-	if c.controlFlag() || !c.lengthCounter.enabled || c.lengthCounter.count == 0 || c.linearCounter == 0 {
+	if !c.enabled || c.controlFlag() || c.lengthCounter.count == 0 || c.linearCounter == 0 {
 		return 0
 	}
 	// 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0

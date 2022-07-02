@@ -217,11 +217,24 @@ func (a *Port) Write(addr uint16, value uint8) {
 		a.apu.dmc.write(addr, value)
 
 	case addr == 0x4015:
-		a.apu.pulse1.lengthCounter.enable(util.IsSet(value, 0))
-		a.apu.pulse2.lengthCounter.enable(util.IsSet(value, 1))
-		a.apu.triangle.lengthCounter.enable(util.IsSet(value, 2))
-		a.apu.noise.lengthCounter.enable(util.IsSet(value, 3))
-		a.apu.dmc.enabled = util.IsSet(value, 4)
+		a.apu.pulse1.enabled = value&1 == 1
+		a.apu.pulse2.enabled = value&2 == 2
+		a.apu.triangle.enabled = value&4 == 4
+		a.apu.noise.enabled = value&8 == 8
+		a.apu.dmc.enabled = value&16 == 16
+
+		if a.apu.pulse1.enabled {
+			a.apu.pulse1.lengthCounter.reset()
+		}
+		if a.apu.pulse2.enabled {
+			a.apu.pulse2.lengthCounter.reset()
+		}
+		if a.apu.triangle.enabled {
+			a.apu.triangle.lengthCounter.reset()
+		}
+		if a.apu.noise.enabled {
+			a.apu.noise.lengthCounter.reset()
+		}
 	case addr == 0x4017:
 		a.apu.frameCounterControl = value
 	default:

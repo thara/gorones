@@ -3,6 +3,8 @@ package apu
 import "github.com/thara/gorones/util"
 
 type dmc struct {
+	enabled bool
+
 	flags   uint8
 	direct  uint8
 	address uint8
@@ -11,8 +13,6 @@ type dmc struct {
 	timerCounter uint8
 
 	bitsRemainingCounter uint8
-
-	enabled bool
 
 	sampleBuffer uint8
 

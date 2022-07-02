@@ -1,22 +1,16 @@
 package apu
 
 type lengthCounter struct {
-	enabled bool
-	count   uint
-	halt    bool
+	count uint
+	halt  bool
 }
 
-func (c *lengthCounter) enable(v bool) {
-	c.enabled = v
-	if !v {
-		c.count = 0
-	}
+func (c *lengthCounter) reset() {
+	c.count = 0
 }
 
 func (c *lengthCounter) reload(v uint8) {
-	if c.enabled {
-		c.count = lengthTable[v]
-	}
+	c.count = lengthTable[v]
 }
 
 func (c *lengthCounter) clock() {

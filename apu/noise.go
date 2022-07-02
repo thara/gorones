@@ -3,6 +3,8 @@ package apu
 import "github.com/thara/gorones/util"
 
 type noiseChannel struct {
+	enabled bool
+
 	envelope uint8
 	period   uint8
 
@@ -14,7 +16,6 @@ type noiseChannel struct {
 
 	timerCounter uint16
 	timerPeriod  uint16
-	enabled      bool
 
 	lengthCounter lengthCounter
 }
@@ -35,7 +36,9 @@ func (c *noiseChannel) write(addr uint16, value uint8) {
 		c.period = value
 		c.timerPeriod = noiseTimerPeriodTable[c.timerEntry()]
 	case 0x400F:
-		c.lengthCounter.reload((value & 0b11111000) >> 3)
+		if c.enabled {
+			c.lengthCounter.reload((value & 0b11111000) >> 3)
+		}
 		c.envelopeStart = true
 	}
 }

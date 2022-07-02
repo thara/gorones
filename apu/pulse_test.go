@@ -189,14 +189,14 @@ func Test_pulse_clockSweepUnit(t *testing.T) {
 func Test_pulse_enable(t *testing.T) {
 	t.Run("enabled", func(t *testing.T) {
 		var c pulseChannel
-		c.lengthCounter.enable(true)
+		c.enabled = true
 		c.write(0x4003, 0b10101000)
 		// 1 0101 (21)
 		assert.EqualValues(t, 0x14, c.lengthCounter.count)
 	})
 	t.Run("disabled", func(t *testing.T) {
 		var c pulseChannel
-		c.lengthCounter.enable(false)
+		c.enabled = false
 		before := c.lengthCounter.count
 		c.write(0x4003, 0b11)
 		// 1 0101 (21)

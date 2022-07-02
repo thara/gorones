@@ -49,7 +49,7 @@ func (c *triangleChannel) clockTimer() {
 	} else {
 		c.timerCounter = c.timerPeriod
 		if 0 < c.linearCounter && 0 < c.lengthCounter {
-			c.sequencer += 1
+			c.sequencer++
 			if c.sequencer == 32 {
 				c.sequencer = 0
 			}
@@ -61,7 +61,7 @@ func (c *triangleChannel) clockLinearCounter() {
 	if c.linearCounterReloadFlag {
 		c.linearCounter = c.linearCounterReload
 	} else {
-		c.linearCounter -= 1
+		c.linearCounter--
 	}
 
 	if c.controlFlag {
@@ -79,12 +79,10 @@ func (c *triangleChannel) output() uint8 {
 	if !c.enabled || c.controlFlag || c.lengthCounter == 0 || c.linearCounter == 0 {
 		return 0
 	}
-	// 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0
-	//  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
-	s := int(c.sequencer)
-	v := int(s) - 15 - (s / 16)
-	if v < 0 {
-		return uint8(-v)
-	}
-	return uint8(v)
+	return sequencerTable[c.sequencer]
+}
+
+var sequencerTable = [32]uint8{
+	15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 }

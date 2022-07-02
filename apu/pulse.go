@@ -47,7 +47,7 @@ func (c *pulseChannel) write(addr uint16, value uint8) {
 	case 0x4000, 0x4004:
 		c.volume = value
 		c.dutyCycle = c.volume >> 6
-		c.lengthCounter.halt = (value>>5)&1 == 1
+		c.lengthCounter.halt = (value>>5)&1 == 0
 		c.envelopeLoop = (value>>5)&1 == 1
 		c.useConstantVolume = (value>>4)&1 == 1
 		c.envelopePeriod = c.volume & 0b1111

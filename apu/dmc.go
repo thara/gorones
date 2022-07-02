@@ -78,6 +78,8 @@ func (c *dmc) clockTimer(memoryReader DMCMemoryReader) bool {
 			}
 			c.bytesRemainingCounter -= 1
 
+			c.sampleBufferEmpty = false
+
 			if c.bytesRemainingCounter == 0 {
 				if c.loopFlag() {
 					c.start()

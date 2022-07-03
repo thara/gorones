@@ -60,7 +60,7 @@ func (c *triangleChannel) clockTimer() {
 func (c *triangleChannel) clockLinearCounter() {
 	if c.linearCounterReloadFlag {
 		c.linearCounter = c.linearCounterReload
-	} else {
+	} else if 0 < c.linearCounter {
 		c.linearCounter--
 	}
 
@@ -76,7 +76,7 @@ func (c *triangleChannel) clockLengthCounter() {
 }
 
 func (c *triangleChannel) output() uint8 {
-	if !c.enabled || c.lengthCounter == 0 || c.linearCounter == 0 || c.timerPeriod < 2 {
+	if !c.enabled || !c.controlFlag || c.lengthCounter == 0 || c.linearCounter == 0 || c.timerPeriod < 2 {
 		return 0
 	}
 	return sequencerTable[c.sequencer] & 0xF

@@ -30,8 +30,14 @@ func main() {
 
 	path := os.Args[1]
 
-	portaudio.Initialize()
-	defer portaudio.Terminate()
+	if err := portaudio.Initialize(); err != nil {
+		log.Fatalln(err)
+	}
+	defer func() {
+		if err := portaudio.Terminate(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
 	host, err := portaudio.DefaultHostApi()
 	if err != nil {
 		log.Fatalln(err)

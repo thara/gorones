@@ -90,6 +90,7 @@ func Test_pulse_clockEnvelope(t *testing.T) {
 		t.Run("envelope's counter is greater than zero after clocked", func(t *testing.T) {
 			c := pulseChannel{}
 			c.write(0x4000, 0b111) // volume
+			c.envelopeStart = false
 			c.envelopeCounter = c.envelopePeriod
 
 			before := c.envelopeCounter
@@ -101,6 +102,7 @@ func Test_pulse_clockEnvelope(t *testing.T) {
 			t.Run("reloads envelope's counter", func(t *testing.T) {
 				c := pulseChannel{envelopeCounter: 0}
 				c.write(0x4000, 0b111) // volume
+				c.envelopeStart = false
 
 				c.clockEnvelope()
 				assert.EqualValues(t, c.envelopePeriod, c.envelopeCounter)
@@ -108,6 +110,7 @@ func Test_pulse_clockEnvelope(t *testing.T) {
 			t.Run("envelope's decayLevelCounter become to be greater than 0 after clocked", func(t *testing.T) {
 				c := pulseChannel{envelopeDecayLevelCounter: 2}
 				c.write(0x4000, 0b111) // volume
+				c.envelopeStart = false
 
 				before := c.envelopeDecayLevelCounter
 				c.clockEnvelope()
@@ -116,7 +119,9 @@ func Test_pulse_clockEnvelope(t *testing.T) {
 			t.Run("envelope's decayLevelCounter become 0 after clocked", func(t *testing.T) {
 				c := pulseChannel{}
 				c.write(0x4000, 0b100000) // volume
+				c.envelopeStart = false
 				c.envelopeCounter = c.envelopePeriod
+
 				c.clockEnvelope()
 				assert.EqualValues(t, 15, c.envelopeDecayLevelCounter)
 			})

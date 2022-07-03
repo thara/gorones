@@ -4,7 +4,12 @@ import "fmt"
 
 // Trace is a snapshot of CPU state
 type Trace struct {
-	cpu
+	A, X, Y uint8
+	S       uint8
+	P       Status
+	PC      uint16
+
+	Cycles uint64
 
 	Opcode   uint8
 	Operand1 uint8
@@ -29,7 +34,13 @@ func (e *CPU) Trace() Trace {
 		op1 = e.m.ReadCPU(e.cpu.PC + 1)
 	}
 	return Trace{
-		cpu:            e.cpu,
+		A:              e.A,
+		X:              e.X,
+		Y:              e.Y,
+		S:              e.S,
+		P:              e.P,
+		PC:             e.PC,
+		Cycles:         e.Cycles,
 		Opcode:         op,
 		Operand1:       op1,
 		Operand2:       op2,

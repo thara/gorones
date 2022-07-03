@@ -110,7 +110,7 @@ func (b *cpuBus) ReadCPU(addr uint16) uint8 {
 	case 0x4000 <= addr && addr <= 0x4013:
 		fallthrough
 	case addr == 0x4015:
-		b.apuPort.Read(addr)
+		return b.apuPort.Read(addr)
 
 	case addr == 0x4016:
 		return b.ctrl1.Read()

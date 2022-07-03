@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/thara/gorones/apu"
 	"github.com/thara/gorones/cpu"
 	"github.com/thara/gorones/input"
 	"github.com/thara/gorones/mapper"
@@ -38,18 +37,7 @@ func Test_nestest(t *testing.T) {
 
 	var ctrl1, ctrl2 input.StandardController
 
-	intr := cpu.NoInterrupt
-
-	ppu := ppu.New(m, new(nopFrameRenderer))
-	apu := apu.New(new(nopAudioRenderer))
-	ticker := cpuTicker{ppu: ppu, apu: apu, interrupt: &intr}
-	bus := cpuBus{mapper: m, ctrl1: &ctrl1, ctrl2: &ctrl2, t: &ticker, apuPort: apu.Port}
-	ticker.dmcMemoryReader = &bus
-
-	nes := &NES{
-		cpu:       cpu.New(&ticker, &bus),
-		interrupt: &intr,
-	}
+	nes := NewNES(m, &ctrl1, &ctrl2, new(nopFrameRenderer), new(nopAudioRenderer))
 	nes.PowerOn()
 	nes.InitNEStest()
 
@@ -77,8 +65,8 @@ func Test_nestest(t *testing.T) {
 
 	assert.EqualValues(t, 26560, nes.cpu.Trace().Cycles)
 
-	assert.EqualValues(t, 0, bus.ReadCPU(0x0002))
-	assert.EqualValues(t, 0, bus.ReadCPU(0x0003))
+	assert.EqualValues(t, 0, nes.ReadCPU(0x0002))
+	assert.EqualValues(t, 0, nes.ReadCPU(0x0003))
 }
 
 // nestest.log line example:

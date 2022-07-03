@@ -126,13 +126,19 @@ func (a *APU) Step(dmcMemoryReader DMCMemoryReader) bool {
 
 func (a *APU) sample() float32 {
 	p1 := float32(a.pulse1.output())
-	// if 0 < p1 {
-	// 	fmt.Print(p1)
-	// }
 	p2 := float32(a.pulse2.output())
 	triangle := float32(a.triangle.output())
 	noise := float32(a.noise.output())
 	dmc := float32(a.dmc.output())
+	// for debug
+	// triangle = 0
+	// noise = 0
+	// dmc = 0
+
+	// if 0 < triangle && 100000 < a.cycles && a.cycles < 120000 {
+	// 	fmt.Println(a.cycles, triangle)
+	// }
+	// fmt.Println(a.cycles, p1, p2, triangle)
 
 	var pulseOut float32
 	if p1 != 0.0 || p2 != 0.0 {
@@ -143,7 +149,7 @@ func (a *APU) sample() float32 {
 
 	var tndOut float32
 	if triangle != 0.0 || noise != 0.0 || dmc != 0.0 {
-		tndOut = 159.79 / (1/((triangle/8227)+(noise/12241)+(dmc/22638)) + 100)
+		tndOut = 159.79 / (1/(triangle/8227+noise/12241+dmc/22638) + 100)
 	} else {
 		tndOut = 0.0
 	}
@@ -195,6 +201,7 @@ func (a *Port) Read(addr uint16) uint8 {
 
 		a.apu.frameInterrupted = false
 
+		fmt.Printf("%d read %04x, %08b\n", a.apu.cycles, addr, value)
 		return value
 	default:
 		return 0x00
@@ -202,7 +209,7 @@ func (a *Port) Read(addr uint16) uint8 {
 }
 
 func (a *Port) Write(addr uint16, value uint8) {
-	fmt.Printf("write %04x, %08b\n", addr, value)
+	fmt.Printf("%d write %04x, %08b\n", a.apu.cycles, addr, value)
 	switch {
 	case 0x4000 <= addr && addr <= 0x4003:
 		a.apu.pulse1.write(addr, value)

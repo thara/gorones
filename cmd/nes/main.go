@@ -37,15 +37,19 @@ func main() {
 		log.Fatalln(err)
 	}
 	audio := &Audio{channel: make(chan float32, 44100)}
+	param := portaudio.HighLatencyParameters(nil, host.DefaultOutputDevice)
+	outChan := param.Output.Channels
 	stream, err := portaudio.OpenStream(
-		portaudio.HighLatencyParameters(nil, host.DefaultOutputDevice),
+		param,
 		func(out []float32) {
 			for i := range out {
-				select {
-				case sample := <-audio.channel:
-					out[i] = sample
-				default:
-					out[i] = 0
+				if i%outChan == 0 {
+					select {
+					case sample := <-audio.channel:
+						out[i] = sample
+					default:
+						out[i] = 0
+					}
 				}
 			}
 		},

@@ -23,8 +23,6 @@ type APU struct {
 	frameInterrupted    bool
 
 	audio AudioRenderer
-
-	Port Port
 }
 
 func New(audio AudioRenderer) *APU {
@@ -32,7 +30,7 @@ func New(audio AudioRenderer) *APU {
 		samplingFrequency uint = 1_789_772
 		downSamplingRate  uint = 44100
 	)
-	apu := &APU{
+	return &APU{
 		sampleRate:  samplingFrequency / downSamplingRate,
 		framePeriod: 7458,
 		audio:       audio,
@@ -40,8 +38,6 @@ func New(audio AudioRenderer) *APU {
 		pulse2:      pulseChannel{carryMode: sweepTwoComplement},
 		noise:       noiseChannel{shiftRegister: 1},
 	}
-	apu.Port = Port{apu}
-	return apu
 }
 
 type AudioRenderer interface {
@@ -157,11 +153,7 @@ func (a *APU) sample() float32 {
 	return pulseOut + tndOut
 }
 
-type Port struct {
-	apu *APU
-}
-
-func (a *Port) Reset() {
+func (a *APU) Reset() {
 	a.Write(0x4017, 0) // frame irq enabled
 	a.Write(0x4015, 0) // all channels disabled
 
@@ -173,68 +165,67 @@ func (a *Port) Reset() {
 	}
 }
 
-func (a *Port) Read(addr uint16) uint8 {
+func (a *APU) Read(addr uint16) uint8 {
 	switch addr {
 	case 0x4015:
 		var value uint8
-		if a.apu.dmc.interrupted {
+		if a.dmc.interrupted {
 			value |= 0x80
 		}
-		if a.apu.frameInterrupted && !a.apu.frameInterruptInhibit() {
+		if a.frameInterrupted && !a.frameInterruptInhibit() {
 			value |= 0x40
 		}
-		if 0 < a.apu.dmc.bytesRemainingCounter {
+		if 0 < a.dmc.bytesRemainingCounter {
 			value |= 0x20
 		}
-		if 0 < a.apu.noise.lengthCounter {
+		if 0 < a.noise.lengthCounter {
 			value |= 0x08
 		}
-		if 0 < a.apu.triangle.lengthCounter {
+		if 0 < a.triangle.lengthCounter {
 			value |= 0x04
 		}
-		if 0 < a.apu.pulse2.lengthCounter {
+		if 0 < a.pulse2.lengthCounter {
 			value |= 0x02
 		}
-		if 0 < a.apu.pulse1.lengthCounter {
+		if 0 < a.pulse1.lengthCounter {
 			value |= 0x01
 		}
 
-		a.apu.frameInterrupted = false
+		a.frameInterrupted = false
 
-		fmt.Printf("%d read %04x, %08b\n", a.apu.cycles, addr, value)
+		fmt.Printf("%d read %04x, %08b\n", a.cycles, addr, value)
 		return value
 	default:
 		return 0x00
 	}
 }
 
-func (a *Port) Write(addr uint16, value uint8) {
-	fmt.Printf("%d write %04x, %08b\n", a.apu.cycles, addr, value)
+func (a *APU) Write(addr uint16, value uint8) {
 	switch {
 	case 0x4000 <= addr && addr <= 0x4003:
-		a.apu.pulse1.write(addr, value)
+		a.pulse1.write(addr, value)
 
 	case 0x4004 <= addr && addr <= 0x4007:
-		a.apu.pulse2.write(addr, value)
+		a.pulse2.write(addr, value)
 
 	case 0x4008 <= addr && addr <= 0x400B:
-		a.apu.triangle.write(addr, value)
+		a.triangle.write(addr, value)
 
 	case 0x400C <= addr && addr <= 0x400F:
-		a.apu.noise.write(addr, value)
+		a.noise.write(addr, value)
 
 	case 0x4010 <= addr && addr <= 0x4013:
-		a.apu.dmc.write(addr, value)
+		a.dmc.write(addr, value)
 
 	case addr == 0x4015:
-		a.apu.pulse1.setEnabled(value&1 == 1)
-		a.apu.pulse2.setEnabled(value&2 == 2)
-		a.apu.triangle.setEnabled(value&4 == 4)
-		a.apu.noise.setEnabled(value&8 == 8)
+		a.pulse1.setEnabled(value&1 == 1)
+		a.pulse2.setEnabled(value&2 == 2)
+		a.triangle.setEnabled(value&4 == 4)
+		a.noise.setEnabled(value&8 == 8)
 
-		a.apu.dmc.enabled = value&16 == 16
+		a.dmc.enabled = value&16 == 16
 	case addr == 0x4017:
-		a.apu.frameCounterControl = value
+		a.frameCounterControl = value
 	default:
 		break
 	}

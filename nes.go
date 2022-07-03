@@ -40,7 +40,7 @@ func (n *NES) PowerOn() {
 
 func (n *NES) Reset() {
 	n.cpu.Reset()
-	n.apu.Port.Reset()
+	n.apu.Reset()
 }
 
 func (n *NES) InitNEStest() {
@@ -87,7 +87,7 @@ func (b *NES) ReadCPU(addr uint16) uint8 {
 	case 0x4000 <= addr && addr <= 0x4013:
 		fallthrough
 	case addr == 0x4015:
-		return b.apu.Port.Read(addr)
+		return b.apu.Read(addr)
 
 	case addr == 0x4016:
 		return b.ctrl1.Read()
@@ -124,13 +124,13 @@ func (b *NES) WriteCPU(addr uint16, value uint8) {
 	case 0x4000 <= addr && addr <= 0x4013:
 		fallthrough
 	case addr == 0x4015:
-		b.apu.Port.Write(addr, value)
+		b.apu.Write(addr, value)
 
 	case addr == 0x4016:
 		b.ctrl1.Write(value)
 	case addr == 0x4017:
 		b.ctrl2.Write(value)
-		b.apu.Port.Write(addr, value)
+		b.apu.Write(addr, value)
 	case 0x4020 <= addr && addr <= 0xFFFF:
 		b.mapper.Write(addr, value)
 	}

@@ -19,7 +19,6 @@ const HEIGHT = 240
 
 type PPU struct {
 	ppu
-	Port Port
 
 	nt       [0x1000]uint8
 	palettes [0x0020]uint8
@@ -63,13 +62,11 @@ type PPU struct {
 }
 
 func New(mapper mapper.Mapper, renderer FrameRenderer) *PPU {
-	ppu := &PPU{
+	return &PPU{
 		mapper:    mapper,
 		mirroring: mapper.Mirroring(),
 		renderer:  renderer,
 	}
-	ppu.Port = Port{ppu: ppu}
-	return ppu
 }
 
 func (p *PPU) CurrentFrames() uint64 {

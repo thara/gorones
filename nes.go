@@ -82,7 +82,7 @@ func (b *NES) ReadCPU(addr uint16) uint8 {
 	case 0x0000 <= addr && addr <= 0x1FFF:
 		return b.wram[addr%0x0800]
 	case 0x2000 <= addr && addr <= 0x3FFF:
-		return b.ppu.Port.ReadRegister(ppuAddr(addr))
+		return b.ppu.ReadRegister(ppuAddr(addr))
 
 	case 0x4000 <= addr && addr <= 0x4013:
 		fallthrough
@@ -119,7 +119,7 @@ func (b *NES) WriteCPU(addr uint16, value uint8) {
 	case 0x0000 <= addr && addr <= 0x1FFF:
 		b.wram[addr%0x0800] = value
 	case 0x2000 <= addr && addr <= 0x3FFF:
-		b.ppu.Port.WriteRegister(ppuAddr(addr), value)
+		b.ppu.WriteRegister(ppuAddr(addr), value)
 
 	case 0x4000 <= addr && addr <= 0x4013:
 		fallthrough

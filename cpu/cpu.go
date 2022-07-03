@@ -2,19 +2,6 @@ package cpu
 
 // CPU emulates CPU behaviors
 type CPU struct {
-	cpu
-
-	t Ticker
-	m Bus
-}
-
-// New returns new CPU emulator
-func New(t Ticker, m Bus) *CPU {
-	return &CPU{t: t, m: m}
-}
-
-/// cpu has cpu registers and clock cycle
-type cpu struct {
 	// https://wiki.nesdev.org/w/index.php?title=CPU_registers
 
 	// Accumulator, Index X/Y register
@@ -26,7 +13,16 @@ type cpu struct {
 	// Program counter
 	PC uint16
 
+	// clock cycle
 	Cycles uint64
+
+	t Ticker
+	m Bus
+}
+
+// New returns new CPU emulator
+func New(t Ticker, m Bus) *CPU {
+	return &CPU{t: t, m: m}
 }
 
 // PowerOn initializes CPU state on power

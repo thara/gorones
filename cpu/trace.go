@@ -21,17 +21,17 @@ type Trace struct {
 
 // Trace current CPU state and return snapshot
 func (e *CPU) Trace() Trace {
-	op := e.m.ReadCPU(e.cpu.PC)
+	op := e.m.ReadCPU(e.PC)
 	inst := Decode(op)
 
 	len := inst.AddressingMode.instructionLength()
 	var op1, op2 uint8
 	switch len {
 	case 3:
-		op2 = e.m.ReadCPU(e.cpu.PC + 2)
+		op2 = e.m.ReadCPU(e.PC + 2)
 		fallthrough
 	case 2:
-		op1 = e.m.ReadCPU(e.cpu.PC + 1)
+		op1 = e.m.ReadCPU(e.PC + 1)
 	}
 	return Trace{
 		A:              e.A,
